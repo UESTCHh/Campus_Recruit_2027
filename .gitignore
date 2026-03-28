@@ -1,5 +1,6 @@
 # 配置 .gitignore（避坑防爆仓库）
-# 因为你写的是 C++，编译时会产生 .exe (Windows) 或 .out / .o (Mac/Linux) 等二进制执行文件。千万不要把这些编译产物传到 GitHub 上！
+# 写的是 C++，编译时会产生 .exe (Windows) 或 .out / .o (Mac/Linux) 等二进制执行文件。
+# 千万不要把这些编译产物传到 GitHub 上！
 *.exe
 *.out
 *.o
