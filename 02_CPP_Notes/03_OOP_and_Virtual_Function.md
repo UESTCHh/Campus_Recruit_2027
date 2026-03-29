@@ -2,6 +2,7 @@
 
 > **打卡日期**：2026-03-27 (Day 3)
 > **核心主题**：static 与单例模式、类与类的三大关系 (复合、委托、继承)、虚函数与经典设计模式 (Template Method / Observer)。
+> **资料出处**: https://www.bilibili.com/video/BV1r6h5zgE2i?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=9
 
 ---
 

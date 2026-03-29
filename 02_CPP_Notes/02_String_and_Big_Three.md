@@ -1,6 +1,7 @@
 # 侯捷 C++ 面向对象高级编程 (上) - 基础复盘 02
 > **打卡日期**：2026-03-26
 > **核心主题**：临时对象、带指针的类 (String)、三大件 (拷贝构造、拷贝赋值、析构)、深浅拷贝、`delete[]`、堆与栈。
+> **资料出处**: https://www.bilibili.com/video/BV1r6h5zgE2i?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=5
 
 ---
 

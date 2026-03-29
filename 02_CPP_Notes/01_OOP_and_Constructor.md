@@ -2,6 +2,7 @@
 
 > **打卡日期**：2026-03-25
 > **核心主题**：头文件防卫、不带指针的类 (以 `Complex` 复数类为例)、构造函数底层、`const` 防守机制、参数传递法则。
+> **资料出处**：https://www.bilibili.com/video/BV1r6h5zgE2i/?spm_id_from=333.1007.top_right_bar_window_custom_collection.content.click&vd_source=e01209adaee5cf8495fa73fbfde26dd1
 
 ---
 
