@@ -2,7 +2,7 @@
 
 > **打卡日期**：2026-03-29 (Day 4 课外加餐)
 > **核心主题**：RAII 机制、`unique_ptr` 独占所有权、`shared_ptr` 引用计数机制、裸指针的致命陷阱、手撕智能指针。
-> **资料网址**: https://www.bilibili.com/video/BV1rdAVzAEqf/?spm_id_from=333.1007.tianma.1-2-2.click&vd_source=e01209adaee5cf8495fa73fbfde26dd1
+> **资料出处**: https://www.bilibili.com/video/BV1rdAVzAEqf/?spm_id_from=333.1007.tianma.1-2-2.click&vd_source=e01209adaee5cf8495fa73fbfde26dd1
 
 ---
 
