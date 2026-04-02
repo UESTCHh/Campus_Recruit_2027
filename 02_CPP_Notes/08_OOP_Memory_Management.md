@@ -179,7 +179,42 @@ public:
 
 ---
 
-## 二、 动态绑定 (Dynamic Binding)
+## 二、 💣 new/delete 的终极底层翻译机制 (面试必考核心)
+
+我们在业务代码中写的 `new` 和 `delete` 实际上是 C++ 的 **表达式 (Expression)**，它们不能被重载，并且在编译时会被强制翻译为极其固定的底层步骤。
+
+### 1. `new` 的三步曲翻译
+当我们写下 `Complex* p = new Complex(1, 2);` 时，编译器底层转化为：
+```cpp
+// 1. 分配足够的内存（底层调用的是 C 语言的 malloc）
+void* mem = operator new(sizeof(Complex)); 
+
+// 2. 强制类型转换
+p = static_cast<Complex*>(mem); 
+
+// 3. 调用构造函数 (注意：直接用指针调构造只有编译器能做，开发者不能这样写)
+p->Complex::Complex(1, 2); 
+```
+### 2. delete 的两步曲翻译
+当我们写下 delete p; 时，编译器底层转化为：
+
+    ```cpp
+
+    // 1. 优先调用析构函数（清理对象内部挂载的动态资源）
+    p->~Complex(); 
+
+    // 2. 释放对象自身占用的内存（底层调用 C 语言的 free）
+    operator delete(p);
+    ``` 
+### 3. delete 和 delete[] 的致命区别
+* delete p; 仅仅唤起 1次 析构函数。
+
+* delete[] p; 会根据分配数组时内存头部记录的“Cookie 长度信息”，唤起 n次 析构函数。
+
+* 大厂考点： 如果你 new 了一个类对象数组（比如 new String[3]），但错误地使用了 delete p; 去释放。虽然这 3 个对象的整体内存块最终会被 free 掉，但是 只有第 1 个对象的析构函数被调用了！ 另外 2 个 String 对象内部指向字符串的裸指针就永远丢失了，造成极其隐蔽的内存泄漏！
+---
+
+## 三、 动态绑定 (Dynamic Binding)
 
 ### 1. 动态绑定的条件
 - **必须是虚函数**：函数在基类中声明为 `virtual`，派生类可以重写
@@ -393,7 +428,7 @@ delete ptr; // 正确：先调用 Derived::~Derived()，再调用 Base::~Base()
 
 ---
 
-## 三、 new 和 delete 的底层机制
+## 四、 new 和 delete 的底层机制
 
 ### 1. new 操作符的工作过程
 
@@ -618,7 +653,7 @@ delete[] arr;
 
 ---
 
-## 四、 重载 operator new 和 operator delete
+## 五、 重载 operator new 和 operator delete
 
 ### 1. 全局重载
 ```cpp
@@ -724,7 +759,7 @@ Foo* pArray = ::new Foo[5];
 
 ---
 
-## 五、 Placement New 和 Placement Delete
+## 六、 Placement New 和 Placement Delete
 
 ### 1. Placement New 的定义
 Placement New 是一种特殊的 new 操作符重载，允许在已分配的内存上构造对象。它的基本形式是带有额外参数的 new 操作符。
@@ -983,7 +1018,7 @@ std::free(memory);
 
 ---
 
-## 六、 basic_string 中的内存管理优化
+## 七、 basic_string 中的内存管理优化
 
 ### 1. 基本结构
 
@@ -1271,7 +1306,7 @@ int main() {
 
 ---
 
-## 七、 实战示例分析
+## 八、 实战示例分析
 
 ### 1. 示例代码
 
@@ -1569,7 +1604,7 @@ Foo* p = new Foo[3];
 
 ---
 
-## 八、 内存管理最佳实践
+## 九、 内存管理最佳实践
 
 ### 1. 规则总结
 - **new/delete 配对**：每个 new 必须对应一个 delete
@@ -1590,7 +1625,15 @@ Foo* p = new Foo[3];
 
 ---
 
-## 九、 面试高频考点
+## 十、 重载 operator new 与内存池的 Cookie 战争
+### 1. 什么是 Cookie？
+操作系统的 malloc 在给我们分配小块内存时，会在我们真正要用的内存块上下，强行加上两个“Cookie”块（通常是 4~8 字节），用来记录这块内存的总长度，以便后续 free 能够准确回收。
+### 2. 为什么大厂要做内存池 (Memory Pool)？
+如果我们在游戏中创建 100 万个微小粒子（每个粒子只有 4 字节），那么操作系统附带的 Cookie 就会占用 $100万 \times 8字节$，造成的内存浪费高达 200%！
+  * **解决方案：** 我们在类内部重载全局的 operator new，一次性向系统 malloc 索要一大块连续内存（此时只产生一份 Cookie），然后在内部切割成小块链表分发给对象。这极大地压榨了内存利用率，也是高频交易和 AI 底层不可或缺的优化手段。
+
+---
+## 十一、 面试高频考点
 
 ### 1. 灵魂拷问：new 和 malloc 的区别？
 
