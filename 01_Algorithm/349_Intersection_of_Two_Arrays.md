@@ -7,7 +7,7 @@
 
 ## 📝 一、 题目描述与核心要求
 
-* **题目内容：** 给定两个整数数组 `nums1` 和 `nums2`，返回它们的交集。输出结果中的每个元素必须是唯一的，且顺序不限。
+* **题目内容：** 给定两个整数数组 `nums1` 和 `nums2`，返回它们的交集(The intersection of two arrays is defined as the set of elements that are present in both arrays.)。输出结果中的每个元素必须是唯一的，且顺序不限。
 * **核心痛点：** 暴力解法是两层 `for` 循环，时间复杂度 $O(nm)$，其中 $n$ 和 $m$ 分别是两个数组的长度。
 * **大厂面试限制：** 要求必须在 $O(n + m)$ 的时间复杂度内解决，且输出结果中的元素必须唯一。
 * **题目提示：**
@@ -191,6 +191,91 @@ public:
     }
 };
 ```
+
+### 5.4 排序 + 双指针法实现
+
+```cpp
+#include <vector>
+#include <algorithm>
+
+class Solution {
+public:
+    std::vector<int> intersection(std::vector<int>& nums1, std::vector<int>& nums2) {
+        // 对两个数组进行排序
+        std::sort(nums1.begin(), nums1.end());
+        std::sort(nums2.begin(), nums2.end());
+        
+        std::vector<int> result;
+        int i = 0, j = 0;
+        
+        // 使用双指针查找交集
+        while (i < nums1.size() && j < nums2.size()) {
+            if (nums1[i] == nums2[j]) {
+                // 避免重复添加
+                if (result.empty() || result.back() != nums1[i]) {
+                    result.push_back(nums1[i]);
+                }
+                i++;
+                j++;
+            } else if (nums1[i] < nums2[j]) {
+                i++; // 较小的元素指针右移
+            } else {
+                j++; // 较小的元素指针右移
+            }
+        }
+        
+        return result;
+    }
+};
+```
+
+**排序 + 双指针法解释：**
+1. **排序**：首先对两个数组进行排序，时间复杂度为 O(nlogn + mlogm)
+2. **初始化指针**：使用两个指针 i 和 j 分别指向两个数组的起始位置
+3. **双指针遍历**：
+   - 如果两个指针指向的元素相等，说明找到了一个交集元素
+   - 检查结果集合是否为空或最后一个元素是否与当前元素不同，避免重复添加
+   - 同时移动两个指针
+   - 如果 nums1[i] < nums2[j]，移动 i 指针
+   - 如果 nums1[i] > nums2[j]，移动 j 指针
+4. **返回结果**：遍历结束后，返回结果集合
+
+### 5.5 暴力法实现
+
+```cpp
+#include <vector>
+#include <unordered_set>
+
+class Solution {
+public:
+    std::vector<int> intersection(std::vector<int>& nums1, std::vector<int>& nums2) {
+        std::unordered_set<int> result_set; // 使用 set 自动去重
+        
+        // 暴力遍历两个数组
+        for (int i = 0; i < nums1.size(); i++) {
+            for (int j = 0; j < nums2.size(); j++) {
+                if (nums1[i] == nums2[j]) {
+                    result_set.insert(nums1[i]); // 将交集元素添加到 set 中
+                }
+            }
+        }
+        
+        // 将 set 转换为 vector
+        return std::vector<int>(result_set.begin(), result_set.end());
+    }
+};
+```
+
+**暴力法解释：**
+1. **初始化结果集合**：使用 unordered_set 来存储结果，自动去重
+2. **双层循环**：使用两层 for 循环遍历两个数组的所有可能组合
+3. **检查交集**：如果找到相同的元素，将其添加到结果集合中
+4. **转换结果**：将 unordered_set 转换为 vector 并返回
+
+**暴力法性能分析：**
+- 时间复杂度：O(nm)，其中 n 和 m 分别是两个数组的长度
+- 空间复杂度：O(k)，其中 k 是交集元素的数量
+- 适用场景：数据规模很小，对性能要求不高的情况
 
 ---
 
