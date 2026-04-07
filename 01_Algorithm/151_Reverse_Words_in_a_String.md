@@ -220,6 +220,36 @@ public:
     }
 };
 ```
+```cpp
+class Solution {
+public:
+    string reverseWords(string s) {
+        //1. 翻转字符串
+        reverse(s.begin(), s.end());
+        //2. 去除多余空格并翻转单词
+        int slow = 0, fast = 0;
+        while(fast < s.size())
+        {
+            if(s[fast] != ' ')
+            {
+                if(slow != 0) s[slow++] = ' ';
+                int start = fast;//记录每个单词的起始位置
+                while(fast < s.size() && s[fast] != ' ')
+                {
+                    s[slow++] = s[fast++];
+                }
+                //slow为最新添加的单词的末尾的下一位
+                //slow - (fast - start)为要翻转的这个单词的首位, fast - start 为单词长度
+                reverse(s.begin() + slow - (fast - start), s.begin() + slow);
+            }
+            fast++;
+        }
+        //3. 去除多余字符
+        s.resize(slow); //s.erase(s.begin() + idx, s.end());
+        return s;
+    }
+};
+```
 
 **代码解释**：
 1. **反转整个字符串**：使用标准库的 `reverse` 函数将整个字符串反转，这样单词的顺序就颠倒了
