@@ -1,7 +1,7 @@
 # 侯捷 C++ STL标准库和泛型编程 - Set、Map和Hashtable深度探索
 > **打卡日期**：2026-04-10
  > **核心主题**：set、multiset、map、multimap的实现原理以及hashtable的深度探索。
- > **资料出处**： `https://www.bilibili.com/video/BV1kBh5zrEYh?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1`
+ > **资料出处**：https://www.bilibili.com/video/BV1kBh5zrEYh?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1
 
 ---
 ## 一、set和multiset深度探索
