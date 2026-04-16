@@ -33,3 +33,4 @@
 - [x] 2026.04.13: 算法字符串专题圆满收官，彻底完成 KMP 体系复习与 LC459 实战；C++底层深入 STL 源码 Ep 33-35，解剖函数适配器（Function Adapters）架构，掌握 Binder2nd 与 not1 的类型绑定与逻辑取反机制，理解“适配器”在策略重构中的核心地位。
 - [x] 2026.04.14: 算法靶场回归基础，攻克栈与队列核心机制（LC232 用栈实现队列），强化数据流转直觉；C++底层深入 STL 源码 Ep 36-39，破解迭代器适配器（Iterator Adapters）黑科技，掌握 `reverse_iterator` 逆向物理模拟、`inserter` 隐式扩容劫持及 `iostream_iterator` 流抽象机制。
 - [x] 2026.04.15: 算法靶场贯通栈的经典匹配应用（LC20 有效的括号）；C++底层深入 STL 源码 Ep 40-41，攻克工业级万用 Hash Function (Hash Combine) 的可变参数模板实现，掌握 Tuple 元组特性; 开始学习计算机网络基础与底层逻辑：从 MAC 地址到交换机内核。
+- [x] 2026.04.16: 完成计网VLAN与802.1Q笔记，攻克LC1047，掌握type traits 概念与实现、cout 实现、moveable 元素对容器性能的影响
