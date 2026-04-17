@@ -34,3 +34,4 @@
 - [x] 2026.04.14: 算法靶场回归基础，攻克栈与队列核心机制（LC232 用栈实现队列），强化数据流转直觉；C++底层深入 STL 源码 Ep 36-39，破解迭代器适配器（Iterator Adapters）黑科技，掌握 `reverse_iterator` 逆向物理模拟、`inserter` 隐式扩容劫持及 `iostream_iterator` 流抽象机制。
 - [x] 2026.04.15: 算法靶场贯通栈的经典匹配应用（LC20 有效的括号）；C++底层深入 STL 源码 Ep 40-41，攻克工业级万用 Hash Function (Hash Combine) 的可变参数模板实现，掌握 Tuple 元组特性; 开始学习计算机网络基础与底层逻辑：从 MAC 地址到交换机内核。
 - [x] 2026.04.16: 完成计网VLAN与802.1Q笔记，攻克LC1047，掌握type traits 概念与实现、cout 实现、moveable 元素对容器性能的影响
+- [x] 2026.04.17: 完成机器学习课程作业，复现2021年以后的英文文献：Are Transformers Effective for Time Series Forecasting?
