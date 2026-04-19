@@ -8,6 +8,7 @@
 - [02_C++底层与八股笔记](./02_CPP_Notes/)
 - [03_AI笔记](./03_AI_Notes/)
 - [04_计算机网络笔记](./04_Computer_Network/)
+- [05_TSN时隙调度仿真软件](./05_Project_TSN_Simulation/)
 - (后续可添加网络、数据库等目录)
 
 ## 学习里程碑
