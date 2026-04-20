@@ -37,3 +37,5 @@
 - [x] 2026.04.16: 完成计网VLAN与802.1Q笔记，攻克LC1047，掌握type traits 概念与实现、cout 实现、moveable 元素对容器性能的影响
 - [x] 2026.04.17: 完成机器学习课程作业，复现2021年以后的英文文献：Are Transformers Effective for Time Series Forecasting?
 - [x] 2026.04.18: 完成机器学习课程作业，复现2021年以后的英文文献：Are Transformers Effective for Time Series Forecasting? 与小组成员分工，完成ppt制作相关工作。
+- [x] 2026.04.19: 算法靶场攻克 LC 150（逆波兰表达式），掌握基于栈的 AST 后序遍历解析机制；C++底层正式跨入现代 C++11 时代，掌握 `{}` 统一初始化与 `auto` 范围遍历；工程实战打通 XML 数据结构，建立 TSN 仿真器拓扑解析底层能力；重构本地学习库目录架构。
+- [x] 2026.04.20: 算法靶场攻克 LC239 滑动窗口最大值，手撕 deque 单调队列踢人微操；C++底层吸收现代核心武器(Ep 13-14)，掌握 decltype 类型推导与 Lambda 匿名函数闭包；完成工业界 AI Infra 高性能网络岗与中兴网络流控赛道战略侦察。
