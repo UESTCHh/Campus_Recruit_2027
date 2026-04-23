@@ -3,8 +3,8 @@
 > **学习内容**：decltype、lambdas
 > **学习资源**：侯捷老师 C++ 系列视频课程
 > **课程链接**：
-> - `https://www.bilibili.com/video/BV1wBh5zkE2Y?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=13`
-> - `https://www.bilibili.com/video/BV1wBh5zkE2Y?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=14`
+> - https://www.bilibili.com/video/BV1wBh5zkE2Y?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=13
+> - https://www.bilibili.com/video/BV1wBh5zkE2Y?spm_id_from=333.788.videopod.sections&vd_source=e01209adaee5cf8495fa73fbfde26dd1&p=14
 > **学习目标**：掌握 decltype 和 lambdas 的基本概念、使用方法和应用场景
 
 ---
