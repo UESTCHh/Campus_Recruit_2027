@@ -1,0 +1,41 @@
+services:
+  api:
+    image: ai-service-demo:latest
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: ai-service-demo
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    restart: unless-stopped
+
+    stop_grace_period: 30s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    mem_limit: 512m
+    cpus: 1.0
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/healthz')"
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

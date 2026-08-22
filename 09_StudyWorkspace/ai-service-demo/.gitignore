@@ -1,0 +1,45 @@
+# 文件作用：
+# 声明不应进入 Git 版本控制的本地文件和运行产物
+
+# Environment variables
+.env
+.env.*
+
+# Keep environment template
+!.env.example
+
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Tool caches
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 修改原因
+# SQLite 数据库文件属于本机运行状态，可能包含：
+# 本地测试数据；
+# 聊天内容；
+# 将来的敏感业务数据；
+# 不同电脑各自不同的数据库状态。
+# 它不应与源码一起提交。
+# Local SQLite database files
+data/*.db
+data/*.db-*
