@@ -4,3 +4,34 @@
 *.exe
 *.out
 *.o
+
+# IDE
+.idea/
+.vscode/
+
+# AI coding assistants
+.cursor/
+.claude/
+.codex/
+.qwen/
+.gemini/
+.trae/
+
+# Python
+__pycache__/
+*.pyc
+
+# Go
+bin/
+*.exe
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI learning/tool configs
+.learn/
+.github/skills/
+
+# Large reference documents
+04_Computer_Network/*.pdf
