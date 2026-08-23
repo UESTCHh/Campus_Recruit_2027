@@ -12,4 +12,6 @@ func main() {
 
 	fmt.Println("10 + 5 =", sum)
 	fmt.Println("10 - 5 =", difference)
+
+	fmt.Println(calculator.Version)
 }
