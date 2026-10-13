@@ -1,0 +1,20 @@
+class Solution {
+public:
+    vector<int> intersection(vector<int>& nums1, vector<int>& nums2) {
+        unordered_set<int> set;
+        unordered_set<int> ans;
+        vector<int> answer;
+        for(int num : nums1){
+            set.insert(num);
+        }
+        for(int num : nums2){
+            if(set.find(num) != set.end()){
+                ans.insert(num);
+            }
+        }
+        for(auto num : ans){
+            answer.push_back(num);
+        }
+        return answer;
+    }
+};
