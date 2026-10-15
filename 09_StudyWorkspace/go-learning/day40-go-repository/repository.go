@@ -87,3 +87,12 @@ func (r *StudentRepository) List() ([]Student, error) {
 	// 6. 返回全部学生记录
 	return students, nil
 }
+
+func (r *StudentRepository) Create(student Student) error {
+	_, err := r.db.Exec("INSERT INTO students(id, name, age) VALUES(?, ?, ?)",
+		student.ID,
+		student.Name,
+		student.Age,
+	)
+	return err
+}

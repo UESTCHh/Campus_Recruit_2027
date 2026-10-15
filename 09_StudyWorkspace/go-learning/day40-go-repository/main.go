@@ -81,4 +81,27 @@ func main() {
 			student.Age,
 		)
 	}
+
+	repo.Create(Student{
+		ID:   1004,
+		Name: "David",
+		Age:  23,
+	})
+
+	// 第二部分：查询全部学生记录
+	fmt.Println("\nList:")
+
+	studentss, errs := repo.List()
+	if errs != nil {
+		log.Fatal(errs)
+	}
+
+	for _, student := range studentss {
+		fmt.Printf(
+			"%d | %s | %d\n",
+			student.ID,
+			student.Name,
+			student.Age,
+		)
+	}
 }
