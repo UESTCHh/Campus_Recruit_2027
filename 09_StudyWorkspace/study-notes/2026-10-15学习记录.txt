@@ -1,0 +1,2715 @@
+今天是 2026 年 10 月 15 日，Day41，正式开始新一天的学习。
+
+昨天 Day40 加上晚间加练，我们取得了两个重要成果：
+
+- C++： LeetCode 104《二叉树的最大深度》已经独立提交通过（Accepted），同时纠正了递归空间复杂度的理解：`O(h)`，不是 `O(1)`。
+- Go： `StudentRepository` 已经实现 `GetByID()`、`List()`、`Create()`，并成功向 SQLite 插入 David，完成了实际的数据库读写验证。
+
+所以今天不重复昨天已经掌握的内容，直接进入下一阶段。
+
+# 一、Day41 学习安排
+
+| 阶段          | 学习内容                             | 今日目标            |
+| ----------- | -------------------------------- | --------------- |
+| C++ Stage 1 | BFS 广度优先搜索                       | 理解队列实现二叉树遍历     |
+| C++ Stage 2 | LeetCode 102 层序遍历                | 独立编写按层分组的 BFS   |
+| Go Stage 1  | `sql.Result`、`RowsAffected()`    | 理解数据库写操作的执行结果   |
+| Go Stage 2  | Repository `Update()`、`Delete()` | 完成基础 CRUD 并实际验证 |
+
+继续按照之前的节奏：
+
+先 C++，后 Go；一个阶段讲解、实验、检查通过后再进入下一阶段。
+
+# 二、C++ Day41 Stage 1：二叉树 BFS 广度优先搜索
+
+## 1. 回顾：昨天的 DFS 与今天的 BFS 有什么不同？
+
+昨天我们学习了二叉树的三种递归遍历。
+
+对于下面这棵二叉树：
+
+昨天的前序遍历（DFS）：
+
+```
+1 → 2 → 4 → 5 → 3
+```
+
+会先沿着左子树深入，再返回处理其他节点。
+
+而今天的 BFS（Breadth-First Search，广度优先搜索）：
+
+```
+1 → 2 → 3 → 4 → 5
+```
+
+会先处理距离根节点较近的节点，再向下一层扩展。
+
+也就是：
+
+```
+第一层：1
+
+第二层：2 3
+
+第三层：4 5
+```
+
+因此，BFS 在二叉树中也经常被称为层序遍历。
+
+## 2. 为什么 BFS 要使用队列？
+
+你之前已经学过 `queue`。
+
+队列的特点：
+
+FIFO：First In, First Out，先进先出。
+
+假设我们有一个队列：
+
+```
+queue<int> q;
+```
+
+执行：
+
+```
+q.push(1);
+q.push(2);
+q.push(3);
+```
+
+队列中：
+
+```
+队头                  队尾
+ 1       2       3
+```
+
+此时：
+
+```
+q.front(); // 1
+```
+
+然后：
+
+```
+q.pop();
+```
+
+队列变为：
+
+```
+队头          队尾
+ 2       3
+```
+
+BFS 正是利用这个特点：
+
+> 谁先被发现，谁就先被处理。处理当前节点时，把它的左右孩子追加到队尾。
+
+这样就可以保证上一层的节点先于下一层的节点被处理。
+
+# 三、BFS 的执行过程
+
+仍然使用这棵树：
+
+```
+        1
+       / \
+      2   3
+     / \
+    4   5
+```
+
+注意，我们要把节点指针放进队列，而不是只保存节点的值。
+
+因此队列类型是：
+
+```
+queue<TreeNode*> q;
+```
+
+原因很简单：
+
+如果只保存 `int val`，就无法通过该值继续访问节点的左右孩子。
+
+但是如果保存 `TreeNode*`：
+
+```
+TreeNode* node = q.front();
+```
+
+就能够继续访问：
+
+```
+node->left;
+node->right;
+```
+
+下面看完整过程。
+
+| 步骤  | 处理的节点       | 处理后队列（队头 → 队尾） |
+| --- | ----------- | -------------- |
+| 初始化 | 尚未处理        | `[1]`          |
+| 1   | 访问 1，加入 2、3 | `[2, 3]`       |
+| 2   | 访问 2，加入 4、5 | `[3, 4, 5]`    |
+| 3   | 访问 3，没有孩子   | `[4, 5]`       |
+| 4   | 访问 4，没有孩子   | `[5]`          |
+| 5   | 访问 5，没有孩子   | `[]`           |
+
+队列为空，遍历结束。
+
+最终：
+
+```
+1 2 3 4 5
+```
+
+这里有一个非常重要的理解：
+
+BFS 并不是直接判断某个节点位于第几层，而是通过队列的先进先出顺序，自然实现逐层向外扩展。
+
+# 四、编写 BFS 遍历代码
+
+我们先实现最基础的 BFS：按照层序输出所有节点。
+
+暂时不处理 LeetCode 102 要求的二维数组分组。
+
+## 1. 创建目录
+
+在 VS Code 中创建：
+
+```
+D:\Campus_Recruit_2027\02_CPP_Notes\cpp-learning\day41-binary-tree-bfs
+```
+
+新建文件：
+
+```
+bfs_demo.cpp
+```
+
+## 2. 完整代码
+
+```
+
+#include <iostream>
+#include <queue>
+
+using namespace std;
+
+// 二叉树节点
+struct TreeNode {
+    int val;
+    TreeNode* left;
+    TreeNode* right;
+
+    TreeNode(int x)
+        : val(x), left(nullptr), right(nullptr) {}
+};
+
+// BFS：使用队列实现层序遍历
+void bfs(TreeNode* root) {
+    // 空树直接返回
+    if (root == nullptr) {
+        return;
+    }
+
+    // 队列保存节点指针
+    queue<TreeNode*> q;
+
+    // 根节点首先进入队列
+    q.push(root);
+
+    // 队列不为空，就继续遍历
+    while (!q.empty()) {
+        // 获取队头节点
+        TreeNode* current = q.front();
+
+        // 移除队头
+        q.pop();
+
+        // 处理当前节点
+        cout << current->val << " ";
+
+        // 左孩子存在，就加入队列
+        if (current->left != nullptr) {
+            q.push(current->left);
+        }
+
+        // 右孩子存在，就加入队列
+        if (current->right != nullptr) {
+            q.push(current->right);
+        }
+    }
+}
+
+int main() {
+    /*
+            1
+           / \
+          2   3
+         / \
+        4   5
+    */
+
+    TreeNode n1(1);
+    TreeNode n2(2);
+    TreeNode n3(3);
+    TreeNode n4(4);
+    TreeNode n5(5);
+
+    // 建立节点连接关系
+    n1.left = &n2;
+    n1.right = &n3;
+
+    n2.left = &n4;
+    n2.right = &n5;
+
+    TreeNode* root = &n1;
+
+    cout << "BFS: ";
+    bfs(root);
+    cout << '\n';
+
+    return 0;
+}
+
+```
+
+### 为什么这里没有使用 `new`？
+
+因为本次实验中的五个节点都是在 `main()` 内创建的局部对象：
+
+```
+TreeNode n1(1);
+```
+
+在 `main()` 执行期间，这些节点都有效。
+
+我们只是把它们的地址连接起来，所以不需要手动 `delete`。
+
+这与之前 Day39 使用 `new TreeNode(...)` 动态创建节点的方式不同。
+
+对于本次固定的局部对象实验，这样也能避免不必要的手动内存管理。
+
+# 五、运行实验
+
+### 操作位置：PowerShell
+
+```
+cd D:\Campus_Recruit_2027\02_CPP_Notes\cpp-learning\day41-binary-tree-bfs
+```
+
+编译：
+
+```
+g++ -std=c++17 -Wall -Wextra -pedantic bfs_demo.cpp -o bfs_demo.exe
+```
+
+运行：
+
+```
+.\bfs_demo.exe
+```
+
+预期结果：
+
+```
+BFS: 1 2 3 4 5
+```
+
+## 核心代码分析
+
+```
+while (!q.empty()) {
+    TreeNode* current = q.front();
+    q.pop();
+
+    cout << current->val << " ";
+
+    if (current->left != nullptr) {
+        q.push(current->left);
+    }
+
+    if (current->right != nullptr) {
+        q.push(current->right);
+    }
+}
+```
+
+你要能够理解三件事：
+
+第一，为什么先 `front()` 再 `pop()`？
+
+因为要先保存当前队头节点的地址，才能移除队头并继续使用该节点。
+
+第二，为什么需要判断左右孩子是否为空？
+
+因为我们只希望把实际存在的节点加入队列。如果把 `nullptr` 加进去，后续直接执行 `current->val` 就可能发生空指针访问。
+
+第三，为什么左孩子先入队、右孩子后入队？
+
+因为题目要求每一层按照从左到右的顺序访问。
+
+# 六、BFS 的时间与空间复杂度
+
+这里要联系昨天晚间加练中订正的复杂度知识。
+
+对于有 `n` 个节点的二叉树：
+
+时间复杂度：`O(n)`
+
+每个节点最多入队一次、出队一次，访问每个节点的操作总体为线性规模。
+
+空间复杂度：`O(w)`
+
+其中 `w` 表示二叉树的最大宽度，即节点最多的一层所包含的节点数。
+
+因为 BFS 队列在遍历过程中需要保存尚未处理的节点。
+
+最坏情况下：
+
+```
+O(w) = O(n)
+```
+
+所以 BFS 的最坏额外空间复杂度是 `O(n)`。
+
+与昨天的 DFS 对比：
+
+| 算法     | 时间复杂度  | 额外空间复杂度      |
+| ------ | ------ | ------------ |
+| 递归 DFS | `O(n)` | `O(h)`，递归调用栈 |
+| 队列 BFS | `O(n)` | `O(w)`，队列    |
+
+这里 `h` 表示树高，`w` 表示最大宽度。
+
+这两个算法都是线性时间，但额外空间开销取决于不同的树形结构。
+
+# 七、C++ Day41 Stage 1 检查
+
+今天先回答下面三道题，并实际运行 `bfs_demo.cpp`。
+
+## 检查 1：为什么使用队列？
+
+请回答：
+
+1. 为什么 BFS 更适合使用 `queue`，而不是 `stack`？
+2. 队列的先进先出特性，是如何保证二叉树按照层序进行遍历的？
+3. 为什么这里使用 `queue<TreeNode*>`，而不是 `queue<int>`？
+
+检查1：
+1. 为什么 BFS 更适合使用 `queue`，而不是 `stack`？因为最先遍历到的节点要优先处理，即需要先进先出，符合queue的语义，而stack是后进先出，不满足题目要求
+2. 队列的先进先出特性，是如何保证二叉树按照层序进行遍历的？每次处理时都是将队头取出并将其左右子节点入队，这样可以保证每层都是从左至右依次处理，并且是按一层一层依次往下处理
+3. 为什么这里使用 `queue<TreeNode*>`，而不是 `queue<int>`？因为每次处理时都是将队头取出并将其左右子节点入队，需要根据当前队列中的元素知道下次入队的元素，所以不能仅保存current->val，这样无法根据此元素知道current->left和current->right，无法将其左右子节点入队
+## 检查 2：手动模拟 BFS
+
+对于：
+
+```
+        10
+       /  \
+      5    15
+       \   /
+        7 12
+```
+
+写出：
+
+1. BFS 最终遍历结果。
+2. 处理完节点 `10` 后，队列里有哪些节点？
+3. 处理完节点 `5` 后，队列里有哪些节点？
+
+注意这里的树和前面代码中的树不同。
+检查2：
+1. BFS 最终遍历结果。 10 5 15 7 12
+2. 处理完节点 `10` 后，队列里有哪些节点？5 15
+3. 处理完节点 `5` 后，队列里有哪些节点？ 15 7
+## 检查 3：BFS 复杂度分析
+
+对于今天的代码：
+
+```
+void bfs(TreeNode* root)
+```
+
+请回答：
+
+1. 为什么时间复杂度是 `O(n)`？
+2. 为什么空间复杂度不是一定为 `O(1)`？
+3. BFS 的 `O(w)` 与递归 DFS 的 `O(h)` 分别代表什么？
+检查3：
+1. 为什么时间复杂度是 `O(n)`？因为每个节点入队一次，出队一次，处理时间都是O(1)，所以n个节点的复杂度就是O(1 * n) = O(n)
+2. 为什么空间复杂度不是一定为 `O(1)`？因为额外的空间负责度是依据队列的存储元素来决定的，当n=1时，队列最多存储一个元素，自然是O(1)，当n>1时，需要根据树的最大宽度来计算队列的最坏存储元素数量，即O(w)
+3. BFS 的 `O(w)` 与递归 DFS 的 `O(h)` 分别代表什么？二叉树的最大宽度，二叉树的最大深度。
+完成后告诉我 `bfs_demo.cpp` 是否成功运行，以及实际输出。
+
+下一阶段 C++ Day41 Stage 2：LeetCode 102《二叉树的层序遍历》。
+
+这道题和今天的普通 BFS 只有一个关键区别：不仅需要按照 BFS 顺序遍历，还需要把每一层的节点分别保存到一个 `vector<int>` 中，最终返回 `vector<vector<int>>`。
+
+等你通过当前检查后，我们再一步一步解决如何区分不同层的节点，不会直接给出最终答案让你照抄。
+
+你的 C++ Day41 Stage 1 三组检查全部正确，`bfs_demo.cpp` 也已经成功运行 ✅。
+
+从回答来看，你已经理解了 BFS 的三个核心知识点：队列的先进先出特性、二叉树按层遍历的过程，以及 BFS 的时间和空间复杂度。
+
+有两个小细节值得进一步规范，尤其是昨天刚刚纠正过的空间复杂度问题。我们先逐题批改，然后进入 C++ Day41 Stage 2：LeetCode 102 二叉树的层序遍历。
+
+# 一、C++ Day41 Stage 1 检查批改
+
+## 检查 1：为什么 BFS 使用队列？
+
+### 问题
+
+为什么使用 `queue` 而不是 `stack`？为什么队列能保证层序遍历？为什么保存的是 `TreeNode*` 而不是 `int`？
+
+### 我的回答
+
+> 1. 为什么 BFS 更适合使用 `queue`，而不是 `stack`？因为最先遍历到的节点要优先处理，即需要先进先出，符合queue的语义，而stack是后进先出，不满足题目要求
+> 2. 队列的先进先出特性，是如何保证二叉树按照层序进行遍历的？每次处理时都是将队头取出并将其左右子节点入队，这样可以保证每层都是从左至右依次处理，并且是按一层一层依次往下处理
+> 3. 为什么这里使用 `queue<TreeNode*>`，而不是 `queue<int>`？因为每次处理时都是将队头取出并将其左右子节点入队，需要根据当前队列中的元素知道下次入队的元素，所以不能仅保存current->val，这样无法根据此元素知道current->left和current->right，无法将其左右子节点入队
+
+### 订正
+
+✅ 三问全部正确。
+
+需要补充的细节是：BFS 能按照从左到右的顺序遍历，除了依靠队列的 FIFO 特性，还依赖于我们先将左孩子入队，再将右孩子入队。
+
+```
+if (current->left != nullptr) {
+    q.push(current->left);
+}
+
+if (current->right != nullptr) {
+    q.push(current->right);
+}
+```
+
+如果反过来，先右后左，同样能够逐层遍历，但每一层会按照从右到左的顺序处理。
+
+### 相关示例
+
+```
+        1
+       / \
+      2   3
+```
+
+先左后右：
+
+```
+1 2 3
+```
+
+先右后左：
+
+```
+1 3 2
+```
+
+### 面试专用回答
+
+> BFS 通常使用队列实现，利用队列先进先出的特点，保证先发现的节点先被处理。遍历二叉树时，处理当前节点后依次将左右孩子加入队尾，就能按照从上到下、从左到右的顺序遍历。队列保存节点指针，是为了后续能够继续访问节点的左右孩子。
+
+## 检查 2：手动模拟 BFS
+
+### 问题
+
+给定：
+
+```
+        10
+       /  \
+      5    15
+       \   /
+        7 12
+```
+
+求最终遍历结果，以及处理节点 10、5 后的队列状态。
+
+### 我的回答
+
+> 1. BFS 最终遍历结果。 10 5 15 7 12
+> 2. 处理完节点 `10` 后，队列里有哪些节点？5 15
+> 3. 处理完节点 `5` 后，队列里有哪些节点？ 15 7
+
+### 订正
+
+✅ 全部正确。
+
+你不仅能够计算最终结果，也能理解队列在遍历过程中的动态变化。
+
+### 相关示例
+
+| 已处理节点 | 队列状态（队头 → 队尾） |
+| ----- | ------------- |
+| 初始化   | `[10]`        |
+| 10    | `[5, 15]`     |
+| 5     | `[15, 7]`     |
+| 15    | `[7, 12]`     |
+| 7     | `[12]`        |
+| 12    | `[]`          |
+
+最终：
+
+```
+10 5 15 7 12
+```
+
+注意处理节点 5 后，节点 7 进入队列，但节点 15 仍排在前面。
+
+这是因为节点 15 比节点 7 更早入队，所以会被优先处理。
+
+### 面试专用回答
+
+> 二叉树 BFS 从根节点入队开始，每次取出队头节点进行访问，再按顺序将其非空左右孩子加入队尾，直到队列为空。由于 FIFO 特性，上一层节点会先于下一层节点得到处理。
+
+## 检查 3：BFS 的复杂度分析
+
+### 问题
+
+为什么时间复杂度是 `O(n)`？为什么空间复杂度不是 `O(1)`？`O(w)` 与 `O(h)` 分别代表什么？
+
+### 我的回答
+
+> 1. 为什么时间复杂度是 `O(n)`？因为每个节点入队一次，出队一次，处理时间都是O(1)，所以n个节点的复杂度就是O(1 \* n) = O(n)
+> 2. 为什么空间复杂度不是一定为 `O(1)`？因为额外的空间负责度是依据队列的存储元素来决定的，当n=1时，队列最多存储一个元素，自然是O(1)，当n>1时，需要根据树的最大宽度来计算队列的最坏存储元素数量，即O(w)
+> 3. BFS 的 `O(w)` 与递归 DFS 的 `O(h)` 分别代表什么？二叉树的最大宽度，二叉树的最大深度。
+
+### 订正
+
+✅ 核心全部正确。
+
+这里补充两个细节。
+
+第一，`w` 表示最大层宽，`h` 表示树高。
+
+```
+BFS：O(w) —— 队列空间
+
+递归 DFS：O(h) —— 递归调用栈空间
+```
+
+你的答案正确。
+
+第二，`O(w)` 并不意味着队列中的最大元素数量一定刚好等于最宽一层的节点数量。
+
+因为遍历某一层的过程中，队列可能同时保存：
+
+- 当前层尚未处理的节点。
+- 下一层已经加入队列的节点。
+
+但是队列规模仍然是 `O(w)`，最大不会超过最大层宽的常数倍。
+
+此外，`n > 1` 的二叉树也可能只有宽度 1，例如退化为链表，此时 BFS 的额外队列空间仍是 `O(1)`。
+
+因此严格的说法是：
+
+> BFS 额外空间复杂度为 `O(w)`，最坏情况下为 `O(n)`，但具体使用多少空间取决于树的宽度。
+
+### 相关示例
+
+对于一棵退化为链表的二叉树：
+
+```
+1
+ \
+  2
+   \
+    3
+     \
+      4
+```
+
+每次队列中最多保存一个待处理节点：
+
+```
+BFS 队列空间：O(1)
+DFS 递归栈空间：O(n)
+```
+
+对于一棵较为平衡的二叉树：
+
+```
+          1
+       /     \
+      2       3
+     / \     / \
+    4   5   6   7
+```
+
+```
+BFS 队列空间：O(w)，最坏 O(n)
+DFS 递归栈空间：O(log n)
+```
+
+### 面试专用回答
+
+> 二叉树 BFS 使用队列实现，每个节点最多入队、出队一次，因此时间复杂度为 O(n)。额外空间用于保存待处理节点，与树的最大宽度有关，为 O(w)，最坏为 O(n)。递归 DFS 则依靠函数调用栈，其额外空间与树高有关，为 O(h)。
+
+# 二、C++ Day41 Stage 1 验收
+
+| 学习内容                     | 状态 |
+| ------------------------ | -- |
+| BFS 与 DFS 区别             |    |
+| 使用 `queue<TreeNode*>` 遍历 |    |
+| 手动模拟队列状态                 |    |
+| 时间复杂度 `O(n)`             |    |
+| 额外空间复杂度 `O(w)`           |    |
+| `bfs_demo.cpp` 实际运行      |    |
+
+Stage 1 正式通过。
+
+接下来进入今天最重要的 C++ 实战：LeetCode 102。
+
+# 三、C++ Day41 Stage 2：LeetCode 102 二叉树的层序遍历
+
+## 1. 题目要求
+
+给定二叉树：
+
+```
+          3
+         / \
+        9   20
+           /  \
+          15   7
+```
+
+普通 BFS 输出：
+
+```
+3 9 20 15 7
+```
+
+但 LeetCode 102 要求：
+
+按照层数，将每一层的节点分别放入一个数组中。
+
+因此最终答案是：
+
+```
+{
+    {3},
+    {9, 20},
+    {15, 7}
+}
+```
+
+对应返回类型：
+
+```
+vector<vector<int>>
+```
+
+为什么是二维 `vector`？
+
+因为：
+
+```
+vector<int>
+```
+
+只能表示一层：
+
+```
+{9, 20}
+```
+
+而：
+
+```
+vector<vector<int>>
+```
+
+能够表示多层：
+
+```
+{
+    {3},
+    {9, 20},
+    {15, 7}
+}
+```
+
+所以这道题和 Stage 1 最明显的区别是：
+
+不仅要知道 BFS 的遍历顺序，还需要区分每一层的节点。
+
+## 2. 问题来了：怎么知道当前层有多少个节点？
+
+观察 BFS 的队列。
+
+初始：
+
+```
+队列：[3]
+```
+
+第一层只有一个节点：
+
+```
+3
+```
+
+处理节点 3 后，将它的左右孩子入队：
+
+```
+队列：[9, 20]
+```
+
+此时队列中的两个节点，就是第二层需要处理的节点。
+
+所以我们可以在每一层开始时，记录：
+
+```
+int levelSize = static_cast<int>(q.size());
+```
+
+它代表：
+
+> 在这一层开始处理之前，队列里有多少个需要处理的节点。
+
+接下来只处理这么多节点。
+
+处理过程中，新加入队列的孩子节点属于下一层，不能混入当前层的遍历结果。
+
+## 3. 关键：为什么要提前保存 `q.size()`？
+
+假设：
+
+```
+队列：[9, 20]
+```
+
+我们先记录：
+
+```
+int levelSize = 2;
+```
+
+然后：
+
+```
+for (int i = 0; i < levelSize; i++) {
+    // 处理当前层节点
+}
+```
+
+循环处理：
+
+```
+第1次：处理9
+第2次：处理20
+```
+
+处理节点 20 时，它的两个孩子 15、7 会进入队列：
+
+```
+队列：[15, 7]
+```
+
+但是因为：
+
+```
+levelSize == 2
+```
+
+当前层循环已经执行完两次，因此不会继续处理 15 和 7。
+
+下一轮外层循环，再将 `[15, 7]` 视为新的一层。
+
+这就是按层分组的核心。
+
+# 四、通过可交互演示理解层序遍历
+
+按层遍历过程
+
+步骤 1/4
+
+当前队列（队头 → 队尾）
+
+3
+
+已完成的层
+
+尚未处理
+
+根节点入队，准备开始第一层
+
+&#x20;上一步下一步&#x20;
+
+通过这个过程，可以明确二层循环的不同职责。
+
+外层 `while`：控制一共有多少层。
+
+```
+while (!q.empty()) {
+    // 处理当前层
+}
+```
+
+内层 `for`：只处理当前层的节点。
+
+```
+int levelSize = static_cast<int>(q.size());
+
+for (int i = 0; i < levelSize; i++) {
+    // 取出当前层的节点
+    // 把它的孩子加入队列
+}
+```
+
+这就是 LeetCode 102 相比普通 BFS 新增的主要技巧。
+
+# 五、你来独立实现 LeetCode 102
+
+为了确保你真正掌握，而不是复制代码，我这次不直接提供完整答案。
+
+你已经知道：
+
+- `queue<TreeNode*>` 保存待处理节点。
+- `q.front()` 获取队头。
+- `q.pop()` 移除队头。
+- `q.push()` 加入左右孩子。
+- `levelSize = q.size()` 固定当前层节点数量。
+- `vector<int>` 保存当前层。
+- `vector<vector<int>>` 保存所有层。
+
+现在只需要将它们正确组合起来。
+
+## 1. 代码框架
+
+打开 LeetCode 102，使用 C++17，实现：
+
+```
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> answer;
+
+        if (root == nullptr) {
+            return answer;
+        }
+
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+
+            // TODO 1：
+            // 记录当前层的节点数量
+
+            // TODO 2：
+            // 创建保存当前层节点值的 vector<int>
+
+            // TODO 3：
+            // 使用 for 循环处理当前层的所有节点
+
+            // TODO 4：
+            // 获取队头节点并出队
+
+            // TODO 5：
+            // 保存当前节点的 val
+
+            // TODO 6：
+            // 将非空左右孩子入队
+
+            // TODO 7：
+            // 当前层结束后，将这一层的结果加入 answer
+        }
+
+        return answer;
+    }
+};
+```
+
+关键提示：
+
+```
+answer.push_back(level);
+```
+
+应该放在处理完当前层之后。
+
+不要每处理一个节点就调用一次，否则无法实现按层分组。
+
+## 2. 本题必须通过的测试用例
+
+| 输入                               | 预期输出                  |
+| -------------------------------- | --------------------- |
+| `root = [3,9,20,null,null,15,7]` | `[[3],[9,20],[15,7]]` |
+| `root = [1]`                     | `[[1]]`               |
+| `root = []`                      | `[]`                  |
+| `root = [1,2,3,4,5]`             | `[[1],[2,3],[4,5]]`   |
+
+## 3. 复杂度提示
+
+假设二叉树共有 `n` 个节点，最大宽度为 `w`。
+
+这道题仍然需要访问每个节点一次，所以：
+
+```
+时间复杂度：O(n)
+```
+
+但是空间复杂度要分开考虑：
+
+```
+BFS 队列：O(w)
+
+返回结果 answer：O(n)
+```
+
+因为这道题要求把所有节点值都保存到二维 `vector` 中。
+
+所以：
+
+- 额外辅助空间（不计返回结果）：`O(w)`。
+- 总空间（计入返回结果）：`O(n)`。
+
+这个区别是本题特别值得练习的复杂度分析能力。
+
+# 六、C++ Day41 Stage 2 检查
+
+这次不再增加大量理论题，重点检查你能否独立写出算法。
+
+### 检查 4：`levelSize` 的作用
+
+对于：
+
+```
+int levelSize = static_cast<int>(q.size());
+```
+
+请回答：
+
+为什么需要在每一层处理开始时保存队列大小，而不能在内层循环中持续使用会变化的 `q.size()` 来确定当前层的循环次数？
+
+### 检查 5：独立完成 LeetCode 102
+
+请自行完成代码，并提供：
+
+1. 你的完整 C++ `Solution` 代码。
+2. LeetCode 是否提交通过。
+3. 你分析的时间复杂度和空间复杂度。
+
+完成后我会逐项批改代码、检查复杂度，再结束 C++ Day41，进入 Go Day41 的 `sql.Result`、`RowsAffected()` 和 Repository 更新、删除操作。
+
+今天最重要的目标，就是让你从已经掌握的普通 BFS，独立过渡到能够按层分组保存结果的 BFS。
+检查4：
+因为每一层开始处理时队列的大小就等于每一层的真实节点数量，如果使用在内层循环中持续使用会变化的 `q.size()` ，那么因为处理当前节点会将其非空左右子节点入队，会误把下一层的节点归到当前层的遍历范围中，所以不能在内层循环中持续使用会变化的 `q.size()` 来确定当前层的循环次数。
+检查5：
+1./**
+ * Definition for a binary tree node.
+ * struct TreeNode {
+ *     int val;
+ *     TreeNode *left;
+ *     TreeNode *right;
+ *     TreeNode() : val(0), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+ *     TreeNode(int x, TreeNode *left, TreeNode *right) : val(x), left(left), right(right) {}
+ * };
+ */
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> answer;
+
+        if (root == nullptr) {
+            return answer;
+        }
+
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+
+            // TODO 1：
+            // 记录当前层的节点数量
+            int levelSize = static_cast<int> (q.size());
+
+            // TODO 2：
+            // 创建保存当前层节点值的 vector<int>
+            vector<int> levelVals{};
+
+            // TODO 3：
+            // 使用 for 循环处理当前层的所有节点
+            for(int i = 0; i < levelSize; i++){
+                // TODO 4：
+                // 获取队头节点并出队
+                TreeNode* current = q.front();
+                q.pop();
+
+                // TODO 5：
+                // 保存当前节点的 val
+                levelVals.push_back(current->val);
+
+                // TODO 6：
+                // 将非空左右孩子入队
+                if(current -> left != nullptr){
+                    q.push(current -> left);
+                }
+                if(current -> right != nullptr){
+                    q.push(current -> right);
+                }
+            }
+            // TODO 7：
+            // 当前层结束后，将这一层的结果加入 answer
+            answer.push_back(levelVals);
+        }
+
+        return answer;
+    }
+};
+2.leetcode显示提交正确
+3.时间复杂度：O(n)，每个节点都需入队一次，出队一次，每次出入队的复杂度为O(1)，n个节点则为O(n)
+空间复杂度: 不计入结果空间：O(w)，队列的最坏存储数量情况依据二叉树的最大层宽度，不会超过最大层宽度的常数倍；计入结果空间：O(n)，结果分层存储所有节点，, n>= w，所以为O(n)。
+
+你的 C++ Day41 Stage 2 检查全部正确，LeetCode 102《二叉树的层序遍历》已经独立提交通过！✅
+
+今天 C++ 的学习效果很好：你不仅能够使用队列实现普通 BFS，还能够独立解决按层分组的问题，并准确分析辅助空间与返回结果空间的区别。
+
+这也说明昨天 LeetCode 104 中关于空间复杂度的订正，你今天已经真正应用到了新题目上。
+
+我们先按照约定的格式逐题批改，然后正式结束 C++ Day41，进入 Go Day41 Stage 1：`sql.Result` 与 `RowsAffected()`。
+
+# 一、C++ Day41 Stage 2 检查批改
+
+## 检查 4：为什么要提前保存 `levelSize`？
+
+### 问题
+
+为什么要在每一层开始时执行：
+
+```
+int levelSize = static_cast<int>(q.size());
+```
+
+而不是在内层循环中持续使用 `q.size()`？
+
+### 我的回答
+
+> 因为每一层开始处理时队列的大小就等于每一层的真实节点数量，如果使用在内层循环中持续使用会变化的 `q.size()` ，那么因为处理当前节点会将其非空左右子节点入队，会误把下一层的节点归到当前层的遍历范围中，所以不能在内层循环中持续使用会变化的 `q.size()` 来确定当前层的循环次数。
+
+### 订正
+
+✅ 完全正确。
+
+你已经抓住了 LeetCode 102 与普通 BFS 的本质区别：
+
+当前层处理过程中，队列会不断发生变化，但当前层应该处理的节点数量必须保持固定。
+
+例如：
+
+```
+        1
+       / \
+      2   3
+     / \
+    4   5
+```
+
+处理第二层时：
+
+```
+当前队列：[2, 3]
+```
+
+记录：
+
+```
+int levelSize = 2;
+```
+
+在内层循环中：
+
+- 处理节点 2，加入节点 4、5。
+- 处理节点 3，没有孩子。
+- 当前层处理结束。
+
+此时队列变成：
+
+```
+[4, 5]
+```
+
+但节点 4、5 属于第三层，不能放入第二层结果。
+
+另外，动态使用 `q.size()` 不仅可能错误处理下一层，也可能因为队列变短而提前结束当前层循环。
+动态使用 `q.size()` 不仅可能错误处理下一层，也可能因为队列变短而提前结束当前层循环。给出因为队列变短而提取结束当前循环的具体例子。
+### 相关示例
+
+错误的写法：
+
+```
+for (int i = 0; i < q.size(); i++) {
+    // 处理节点并添加孩子
+}
+```
+
+这里 `q.size()` 每次判断循环条件时都可能变化，而且 `i` 与 `q.size()` 的类型也不同，容易引入问题。
+
+正确写法：
+
+```
+int levelSize = static_cast<int>(q.size());
+
+for (int i = 0; i < levelSize; i++) {
+    // 只处理当前层的节点
+}
+```
+
+### 面试专用回答
+
+> 二叉树层序遍历需要在每一层开始时记录当前队列大小，作为本层需要处理的节点数量。因为处理当前节点时会将下一层节点加入队列，导致队列大小动态变化。如果直接使用变化的队列大小控制循环，可能导致层级混乱，因此必须提前固定当前层节点数量。
+
+## 检查 5：独立完成 LeetCode 102
+
+### 问题
+
+独立编写二叉树层序遍历，返回 `vector<vector<int>>`，并分析时间、空间复杂度。
+
+### 我的回答
+
+你提交的核心代码：
+
+```
+class Solution {
+public:
+    vector<vector<int>> levelOrder(TreeNode* root) {
+        vector<vector<int>> answer;
+
+        if (root == nullptr) {
+            return answer;
+        }
+
+        queue<TreeNode*> q;
+        q.push(root);
+
+        while (!q.empty()) {
+            int levelSize = static_cast<int>(q.size());
+
+            vector<int> levelVals{};
+
+            for (int i = 0; i < levelSize; i++) {
+                TreeNode* current = q.front();
+                q.pop();
+
+                levelVals.push_back(current->val);
+
+                if (current->left != nullptr) {
+                    q.push(current->left);
+                }
+                if (current->right != nullptr) {
+                    q.push(current->right);
+                }
+            }
+
+            answer.push_back(levelVals);
+        }
+
+        return answer;
+    }
+};
+```
+
+你的提交反馈：
+
+> leetcode显示提交正确
+
+你的复杂度分析：
+
+> 时间复杂度：O(n)，每个节点都需入队一次，出队一次，每次出入队的复杂度为O(1)，n个节点则为O(n)
+>
+> 空间复杂度: 不计入结果空间：O(w)，队列的最坏存储数量情况依据二叉树的最大层宽度，不会超过最大层宽度的常数倍；计入结果空间：O(n)，结果分层存储所有节点，, n>= w，所以为O(n)。
+
+### 订正
+
+✅ 代码完全正确，复杂度分析也完全正确。
+
+LeetCode 102 · 二叉树的层序遍历
+
+# Accepted
+
+时间
+
+O(n)
+
+辅助空间
+
+O(w)
+
+包含返回值
+
+O(n)
+
+w 为二叉树最大层宽，n 为节点数量。
+
+你的代码有四个关键步骤，都实现正确：
+
+1. 使用 `queue<TreeNode*>` 维护 BFS 遍历。
+2. 在每层开始时保存 `levelSize`。
+3. 使用 `vector<int>` 保存当前层节点值。
+4. 当前层结束后，将 `levelVals` 加入最终结果。
+
+尤其是：
+
+```
+answer.push_back(levelVals);
+```
+
+你把它放在内层 `for` 结束之后，这一点完全正确。
+
+如果放在 `for` 内部，每处理一个节点就保存一次，会导致错误的层级结果。
+
+### 相关示例
+
+输入：
+
+```
+        3
+       / \
+      9   20
+         /  \
+        15   7
+```
+
+执行过程：
+
+| 层数 | levelSize | 当前层结果    |
+| -- | --------- | -------- |
+| 1  | 1         | `[3]`    |
+| 2  | 2         | `[9,20]` |
+| 3  | 2         | `[15,7]` |
+
+最终：
+
+```
+{{3}, {9, 20}, {15, 7}}
+```
+
+关于空间复杂度，你的分析尤其准确：
+
+- `queue`：最多保存 `O(w)` 个待处理节点。
+- `levelVals`：当前层最多 `O(w)` 个节点值。
+- `answer`：总共保存 `n` 个节点值。
+
+所以不计算返回结果时，辅助空间为 `O(w)`；计算返回结果时，总空间为 `O(n)`。
+
+### 可以进一步优化的地方
+
+当前：
+
+```
+vector<int> levelVals{};
+```
+
+完全正确。
+
+如果我们知道当前层有 `levelSize` 个节点，可以提前预留空间：
+
+```
+vector<int> levelVals;
+levelVals.reserve(levelSize);
+```
+
+这可以减少 `vector` 在追加元素时可能发生的动态扩容。
+
+但这只是可选优化，不是必需修改，你当前提交通过的代码已经足够好。
+
+### 面试专用回答
+
+> 二叉树层序遍历可以使用 BFS 和队列实现。首先将根节点入队，每次外层循环开始时记录当前队列大小，确定这一层的节点数量。然后通过内层循环依次处理这些节点，将节点值保存到当前层数组，并将其非空左右孩子加入队列。当前层结束后，将该层数组加入二维结果。每个节点访问一次，时间复杂度为 O(n)；辅助空间为 O(w)，如果计入保存全部节点的返回结果，总空间复杂度为 O(n)。
+
+# 二、C++ Day41 正式完成
+
+今天两阶段全部通过：
+
+| 阶段      | 学习内容                      | 验收       |
+| ------- | ------------------------- | -------- |
+| Stage 1 | 普通 BFS、`queue<TreeNode*>` | 代码运行成功   |
+| Stage 1 | 队列状态推导                    | 正确       |
+| Stage 1 | BFS 时间和空间复杂度              | 正确       |
+| Stage 2 | 按层分组 BFS                  | 正确       |
+| Stage 2 | LeetCode 102              | Accepted |
+| Stage 2 | 复杂度分析                     | 正确       |
+
+从昨天到今天，你已经连续独立完成两道二叉树题：
+
+- LeetCode 104：最大深度（递归 DFS）。
+- LeetCode 102：层序遍历（队列 BFS）。
+
+两题分别代表二叉树中非常重要的两种解题思路。
+
+今天 C++ 到此结束，不再增加新算法题。
+
+# 三、Go Day41 Stage 1：理解 `sql.Result` 和 `RowsAffected()`
+
+昨晚的加练中，你已经自己写出了：
+
+```
+func (r *StudentRepository) Create(student Student) error {
+    _, err := r.db.Exec(
+        "INSERT INTO students(id, name, age) VALUES(?, ?, ?)",
+        student.ID,
+        student.Name,
+        student.Age,
+    )
+
+    return err
+}
+```
+
+并且成功插入：
+
+```
+1004 | David | 23
+```
+
+今天我们要解决一个新的问题：
+
+数据库执行一条写入、修改或删除语句后，除了知道有没有报错，能否知道究竟影响了多少条记录？
+
+答案是可以。
+
+## 1. 回顾 `Exec()` 的返回值
+
+你之前写的是：
+
+```
+_, err := r.db.Exec(...)
+```
+
+为什么使用 `_`？
+
+因为 `Exec()` 实际返回两个值：
+
+```
+(sql.Result, error)
+```
+
+第一个返回值 `sql.Result` 被你忽略了。
+
+今天我们要把它保存下来：
+
+```
+result, err := r.db.Exec(...)
+```
+
+其中：
+
+- `result`：SQL 执行结果。
+- `err`：SQL 执行是否发生错误。
+
+`sql.Result` 是一个接口，主要提供两个方法：
+
+| 方法               | 作用                          |
+| ---------------- | --------------------------- |
+| `RowsAffected()` | 获取 SQL 操作影响的行数              |
+| `LastInsertId()` | 获取最近插入记录的 ID，具体是否支持取决于数据库驱动 |
+
+今天重点学习 `RowsAffected()`。
+
+## 2. `RowsAffected()` 是什么？
+
+例如，执行：
+
+```
+UPDATE students
+SET age = 22
+WHERE id = 1002;
+```
+
+如果学生 1002 存在，通常会有一条记录受到影响。
+
+在 Go 中：
+
+```
+result, err := db.Exec(
+    "UPDATE students SET age = ? WHERE id = ?",
+    22,
+    1002,
+)
+```
+
+然后：
+
+```
+affected, err := result.RowsAffected()
+```
+
+就可以取得数据库驱动报告的受影响行数。
+
+例如：
+
+```
+affected = 1
+```
+
+表示有一条记录受到本次 SQL 操作影响。
+
+但是如果：
+
+```
+result, err := db.Exec(
+    "UPDATE students SET age = ? WHERE id = ?",
+    22,
+    9999,
+)
+```
+
+由于数据库中没有这个学生：
+
+```
+affected = 0
+```
+
+这里要理解一个重要区别：
+
+SQL 执行成功，并不意味着一定有记录被修改。
+
+例如：
+
+```
+DELETE FROM students WHERE id = 9999;
+```
+
+语句可以成功执行，但如果数据库没有该 ID，受影响行数就是 0。
+
+这并不必然代表 SQL 执行错误。
+
+### 执行错误与受影响行数
+
+执行成功
+
+`err == nil`
+
+继续检查 RowsAffected()
+
+执行失败
+
+`err != nil`
+
+直接处理或返回错误
+
+当执行成功时，`RowsAffected()` 可能返回 0、1 或更多，取决于实际匹配情况、SQL 操作及驱动行为。
+
+需要注意，不同数据库对“受影响行”的具体统计语义可能存在差异，因此不能在所有数据库中都把 `RowsAffected() == 0` 简单理解为记录不存在。今天先以 SQLite 的具体实验为基础理解。
+
+# 四、Go Day41 Stage 1 代码实验
+
+这次我们先做一个不会实际改变学生信息的 SQL 实验。
+
+因为昨天已经插入 David，如果今天继续无条件执行同样的 `INSERT`，可能触发重复主键错误。
+
+## 1. 创建目录
+
+在 VS Code 中创建：
+
+```
+D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day41-go-exec-result
+```
+
+新建：
+
+```
+main.go
+```
+
+继续复用之前的：
+
+```
+day38-sql-persistence\students.db
+```
+
+## 2. 完整代码
+
+```
+
+package main
+
+import (
+    "database/sql"
+    "fmt"
+    "log"
+    "os"
+    "path/filepath"
+
+    _ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+    // 继续使用之前创建的SQLite文件数据库
+    dbPath := filepath.Join(
+        "..",
+        "day38-sql-persistence",
+        "students.db",
+    )
+
+    if _, err := os.Stat(dbPath); err != nil {
+        log.Fatal(err)
+    }
+
+    db, err := sql.Open("sqlite3", dbPath)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    if err := db.Ping(); err != nil {
+        log.Fatal(err)
+    }
+
+    // 测试存在和不存在的学生ID
+    studentIDs := []int{1002, 9999}
+
+    for _, studentID := range studentIDs {
+        // 只将age设置为原值，不改变学生信息
+        // 目的是观察受影响行数
+        result, err := db.Exec(
+            "UPDATE students SET age = age WHERE id = ?",
+            studentID,
+        )
+
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        affected, err := result.RowsAffected()
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        fmt.Printf(
+            "Student %d, rows affected: %d\n",
+            studentID,
+            affected,
+        )
+    }
+}
+
+```
+
+这里：
+
+```
+UPDATE students SET age = age WHERE id = ?
+```
+
+表示将 `age` 字段更新为它当前已有的值。
+
+因此，它不会改变学生的实际年龄，适合今天演示执行结果。
+
+在我们当前使用的 SQLite 驱动下，预期能够看到匹配行与不匹配行对应的不同受影响行数。
+
+## 3. 运行命令
+
+### 操作位置：PowerShell
+
+```
+cd D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day41-go-exec-result
+```
+
+初始化模块：
+
+```
+go mod init day41-go-exec-result
+```
+
+添加依赖：
+
+```
+go get github.com/mattn/go-sqlite3
+```
+
+运行：
+
+```
+go run .
+```
+
+预期输出：
+
+```
+Student 1002, rows affected: 1
+Student 9999, rows affected: 0
+```
+
+这段程序可以重复运行，不会像昨天的 `Create()` 一样不断尝试插入重复主键。
+
+# 五、Go Day41 Stage 1 检查
+
+这一阶段只检查三个问题。
+
+## 检查 1：`Exec()` 的返回值
+
+对于：
+
+```
+result, err := db.Exec(
+    "UPDATE students SET age = ? WHERE id = ?",
+    22,
+    1002,
+)
+```
+
+回答：
+
+1. `result` 和 `err` 分别代表什么？
+2. 为什么之前可以使用 `_` 忽略 `result`？
+3. 如果想知道本次操作影响了多少行，应该调用哪个方法？
+
+## 检查 2：`RowsAffected()` 与错误处理
+
+假设：
+
+```
+result, err := db.Exec(
+    "DELETE FROM students WHERE id = ?",
+    9999,
+)
+```
+
+数据库中没有 ID 为 9999 的学生。
+
+回答：
+
+1. SQL 能否正常执行？
+2. `RowsAffected()` 通常返回多少？
+3. 为什么 `err == nil` 不意味着成功删除了一条学生记录？
+
+## 检查 3：数据库操作的职责
+
+如果以后实现：
+
+```
+func (r *StudentRepository) Update(student Student) error
+```
+
+为什么建议在执行 `Exec()` 后检查错误，而不是直接假设 SQL 执行成功？
+
+如果受影响行数是 0，是否需要结合业务需求进一步判断？
+
+完成后告诉我 `go run .` 的实际输出。
+
+通过这一阶段后，我们将直接在你已经实现的 `StudentRepository` 基础上添加 `Update()` 和 `Delete()`，不重复学习昨晚已经完成的 `Create()`。
+
+今天的 Go 目标是形成完整的基础 CRUD；C++ 的 LeetCode 102 已经通过，可以专心进入第二条主线。
+动态使用 `q.size()` 不仅可能错误处理下一层，也可能因为队列变短而提前结束当前层循环。给出因为队列变短而提取结束当前循环的具体例子。
+检查1：
+1. `result` 和 `err` 分别代表什么？前者代表SQL语句执行的结果，通常使用其接口方法RowsAffected查看数据库受到影响的记录行数，后者代表当前SQL语句是否执行成功
+2. 为什么之前可以使用 `_` 忽略 `result`？因为之前的INSERT INTO不需要知道数据库受到影响的记录行数
+3. 如果想知道本次操作影响了多少行，应该调用哪个方法？RowsAffected查看数据库受到影响的记录行数
+检查2：
+1. SQL 能否正常执行？可以
+2. `RowsAffected()` 通常返回多少？0
+3. 为什么 `err == nil` 不意味着成功删除了一条学生记录？因为err == nil只是说明当前SQL语句执行没有发生错误，不代表成功删除了一条学生记录，因为可能删除的学生记录为空，则删除0条记录也算删除成功。
+检查3：
+因为Exec()也会像Query()那样遇到数据库连接失败等等错误导致SQL执行失败，所以不能认定每次 SQL 必定执行成功，需要检查错误
+如果受影响行数是 0，需要结合业务需求进一步判断是SQL语句执行失败还是数据库中是否没有该学生记录。
+
+你这次的 Go Day41 Stage 1 三组检查基本全部正确 ✅，尤其是你已经能够区分：
+
+- `err == nil`：SQL 执行没有报告错误。
+- `RowsAffected() == 0`：本次操作没有影响记录，不一定是 SQL 执行失败。
+
+检查 3 的最后一句需要再精确一点：受影响行数为 0 时，不能直接判断 SQL 执行失败；如果 `Exec()` 和 `RowsAffected()` 均未返回错误，应根据业务需求判断是否需要把“未影响记录”视为业务失败。
+
+先回答你提出的 BFS 问题，这个例子也很适合追加到今天的 C++ 笔记中。
+
+# 一、为什么动态使用 `q.size()` 可能提前结束当前层？
+
+考虑下面这棵只有三个节点的二叉树：
+
+```
+       1
+      / \
+     2   3
+```
+
+正确的层序遍历结果应该是：
+
+```
+{
+    {1},
+    {2, 3}
+}
+```
+
+假设你错误地写成：
+
+```
+for (int i = 0; i < static_cast<int>(q.size()); i++) {
+    TreeNode* current = q.front();
+    q.pop();
+
+    levelVals.push_back(current->val);
+
+    if (current->left != nullptr) {
+        q.push(current->left);
+    }
+
+    if (current->right != nullptr) {
+        q.push(current->right);
+    }
+}
+```
+
+问题在于，`q.size()` 每次判断循环条件时都会重新计算。
+
+## 具体执行过程
+
+第一层节点 1 处理完成后，队列为：
+
+```
+队头 → [2, 3] ← 队尾
+```
+
+此时准备处理第二层。
+
+| 步骤     | `i` | `q.size()` | 条件          | 发生什么           |
+| ------ | --- | ---------- | ----------- | -------------- |
+| 开始     | 0   | 2          | `0 < 2`，成立  | 进入循环           |
+| 处理节点 2 | 0   | 1          | —           | 节点 2 出队，没有孩子入队 |
+| 下一次判断  | 1   | 1          | `1 < 1`，不成立 | 循环提前结束         |
+
+此时队列还剩下：
+
+```
+[3]
+```
+
+但是当前层的结果已经变成：
+
+```
+[2]
+```
+
+下一次外层 `while` 又会把节点 3 当成新的一层。
+
+错误结果
+
+[[1], [2], [3]]
+
+同一层的 2 和 3 被错误地拆开。
+
+正确结果
+
+[[1], [2, 3]]
+
+第二层的两个节点一起处理。
+
+### 为什么提前保存 `levelSize` 就能解决？
+
+```
+int levelSize = static_cast<int>(q.size());
+
+for (int i = 0; i < levelSize; i++) {
+    // 处理当前层
+}
+```
+
+即使处理节点 2 后，队列大小从 2 变成 1，`levelSize` 仍然是 2。
+
+于是：
+
+```
+i = 0：处理节点 2
+i = 1：处理节点 3
+```
+
+第二层就能完整处理。
+
+因此，动态使用 `q.size()` 有两类风险：
+
+1. 当前节点没有孩子，队列变短，循环可能提前结束。
+2. 当前节点有孩子，队列新增下一层节点，循环可能错误地继续处理下一层。
+
+这也是 LeetCode 102 必须在每一层开始时固定队列大小的根本原因。
+
+# 二、Go Day41 Stage 1 检查批改
+
+## 检查 1：`Exec()` 返回值
+
+### 问题
+
+`result` 和 `err` 分别表示什么？为什么之前忽略 `result`？如何获得受影响的行数？
+
+### 我的回答
+
+> 1. `result` 和 `err` 分别代表什么？前者代表SQL语句执行的结果，通常使用其接口方法RowsAffected查看数据库受到影响的记录行数，后者代表当前SQL语句是否执行成功
+> 2. 为什么之前可以使用 `_` 忽略 `result`？因为之前的INSERT INTO不需要知道数据库受到影响的记录行数
+> 3. 如果想知道本次操作影响了多少行，应该调用哪个方法？RowsAffected查看数据库受到影响的记录行数
+
+### 订正
+
+✅ 三问全部正确。
+
+补充一个准确性细节：`sql.Result` 是接口，其 `RowsAffected()` 方法会返回两个值：
+
+```
+affected, err := result.RowsAffected()
+```
+
+返回类型为：
+
+```
+(int64, error)
+```
+
+因此，不能假设所有驱动都一定能够成功提供受影响行数，需要检查这个方法自身返回的错误。
+
+### 相关示例
+
+```
+result, err := db.Exec(
+    "UPDATE students SET age = ? WHERE id = ?",
+    22,
+    1002,
+)
+if err != nil {
+    return err
+}
+
+affected, err := result.RowsAffected()
+if err != nil {
+    return err
+}
+
+fmt.Println(affected)
+```
+
+### 面试专用回答
+
+> `Exec()` 用于执行通常不返回行结果集的 SQL 操作，返回 `sql.Result` 和 `error`。如果只关心执行是否报错，可以忽略 `Result`；如果需要知道影响了多少条记录，可以调用 `RowsAffected()`，并检查它返回的错误。
+
+## 检查 2：`RowsAffected() == 0` 代表什么？
+
+### 问题
+
+执行删除一个不存在的学生 ID，SQL 是否可以成功执行？`RowsAffected()` 返回多少？为什么 `err == nil` 不代表成功删除一条记录？
+
+### 我的回答
+
+> 1. SQL 能否正常执行？可以
+> 2. `RowsAffected()` 通常返回多少？0
+> 3. 为什么 `err == nil` 不意味着成功删除了一条学生记录？因为err == nil只是说明当前SQL语句执行没有发生错误，不代表成功删除了一条学生记录，因为可能删除的学生记录为空，则删除0条记录也算删除成功。
+
+### 订正
+
+✅ 完全正确。
+
+这里需要区分两个层次：
+
+数据库操作层面：
+
+```
+DELETE FROM students WHERE id = 9999
+```
+
+SQL 正常执行，没有发生数据库错误。
+
+业务结果层面：
+
+```
+删除了 0 条记录
+```
+
+如果业务要求“删除不存在的记录也算成功”，可以返回成功。
+
+如果业务要求“只能删除实际存在的学生”，则可以将影响 0 行转换成业务层的“学生不存在”错误。
+
+两种处理都可能合理，具体由业务规则决定。
+
+### 相关示例
+
+```
+affected, err := result.RowsAffected()
+if err != nil {
+    return err
+}
+
+if affected == 0 {
+    fmt.Println("没有匹配的学生")
+}
+```
+
+### 面试专用回答
+
+> `err == nil` 说明数据库执行没有报告错误，但不保证一定修改或删除了记录。比如 DELETE 的条件没有匹配任何数据时，操作仍可成功执行，而 RowsAffected 返回 0。是否将其视为业务错误，需要根据接口的实际语义决定。
+
+## 检查 3：为什么要检查数据库写操作的错误？
+
+### 问题
+
+为什么 `Update()` 需要检查 `Exec()` 的错误？受影响行数为 0 时，应该如何判断？
+
+### 我的回答
+
+> 因为Exec()也会像Query()那样遇到数据库连接失败等等错误导致SQL执行失败，所以不能认定每次 SQL 必定执行成功，需要检查错误
+>
+> 如果受影响行数是 0，需要结合业务需求进一步判断是SQL语句执行失败还是数据库中是否没有该学生记录。
+
+### 订正
+
+✅ 第一部分完全正确，第二部分需要进一步精确表述。
+
+`Exec()` 可能因为数据库不可用、SQL 语法错误、约束冲突等原因返回错误。
+
+但检查的正确顺序应该是：
+
+```
+执行 Exec()
+      ↓
+检查 err
+      ├── 非 nil → SQL 执行发生错误
+      └── nil → 继续获取 RowsAffected()
+                         ↓
+                   检查其 error
+                         ↓
+                   判断受影响行数
+```
+
+当 `Exec()` 与 `RowsAffected()` 都没有返回错误，且结果为 0 时，通常说明操作没有影响记录，而不是重新将它解释为 SQL 执行失败。
+
+对于按主键进行的 `DELETE`，影响 0 行一般表示没有匹配的记录；对于其他 SQL，则需要结合具体语句和驱动语义解释。
+
+### 相关示例
+
+```
+result, err := db.Exec(
+    "DELETE FROM students WHERE id = ?",
+    9999,
+)
+if err != nil {
+    return err
+}
+
+affected, err := result.RowsAffected()
+if err != nil {
+    return err
+}
+
+if affected == 0 {
+    fmt.Println("学生不存在，未删除任何记录")
+}
+```
+
+### 面试专用回答
+
+> 数据库写操作需要先检查 Exec 返回的 error，确保 SQL 没有发生执行错误。如果还需要判断实际操作结果，则通过 RowsAffected 获取受影响行数，并检查该方法的错误。受影响行数为 0 不一定是数据库异常，可能只是没有匹配记录，具体处理取决于业务需求。
+
+# 三、Go Day41 Stage 1 验收结果
+
+| 检查内容                        | 状态  |
+| --------------------------- | --- |
+| `sql.Result` 与 `error` 的区别  |     |
+| `RowsAffected()` 的作用        |     |
+| `err == nil` 与影响行数的区别       |     |
+| 数据库写操作错误处理                  |     |
+| `RowsAffected() == 0` 的业务含义 | 已订正 |
+
+Go Day41 Stage 1 理解检查通过。 目前还没有收到 `day41-go-exec-result` 实验的实际运行结果，因此实验验收暂时待确认。
+
+接下来进入 Go Day41 Stage 2：实现 `Update()` 和 `Delete()`。
+
+# 四、Go Day41 Stage 2：完善 Repository 的 Update 和 Delete
+
+昨天你已经独立完成：
+
+```
+repo.Create(student)
+```
+
+今天要增加：
+
+```
+repo.Update(student)
+repo.Delete(studentID)
+```
+
+完成后，`StudentRepository` 就拥有最基础的 CRUD 能力。
+
+## 1. 先确定方法设计
+
+今天我们让更新和删除方法都返回：
+
+```
+(int64, error)
+```
+
+例如：
+
+```
+func (r *StudentRepository) Update(student Student) (int64, error)
+```
+
+这里：
+
+- `int64`：数据库报告的受影响行数。
+- `error`：SQL 执行或获取影响行数时的错误。
+
+这样调用者不仅能判断有没有报错，还能知道是否实际匹配了记录。
+
+### Update：修改已有学生
+
+```
+func (r *StudentRepository) Update(student Student) (int64, error) {
+    result, err := r.db.Exec(
+        "UPDATE students SET name = ?, age = ? WHERE id = ?",
+        student.Name,
+        student.Age,
+        student.ID,
+    )
+    if err != nil {
+        return 0, err
+    }
+
+    return result.RowsAffected()
+}
+```
+
+这里：
+
+```
+UPDATE students
+SET name = ?, age = ?
+WHERE id = ?
+```
+
+表示根据学生 ID 修改姓名和年龄。
+
+需要注意：`WHERE id = ?` 非常重要。
+
+如果遗漏 `WHERE`，就可能修改表中的所有学生记录。
+
+### Delete：删除指定学生
+
+```
+func (r *StudentRepository) Delete(studentID int) (int64, error) {
+    result, err := r.db.Exec(
+        "DELETE FROM students WHERE id = ?",
+        studentID,
+    )
+    if err != nil {
+        return 0, err
+    }
+
+    return result.RowsAffected()
+}
+```
+
+这里通过学生 ID 删除记录。
+
+同样不能遗漏：
+
+```
+WHERE id = ?
+```
+
+否则可能删除表中的全部记录。
+
+# 五、完整实验：验证 CRUD 操作
+
+考虑到你之前的 `students.db` 已经存储了 Alice、Bob、Tom 和 David，今天我们不直接修改原数据库。
+
+这次采用独立的内存 SQLite 数据库做实验，优点是：
+
+- 不影响之前保存的真实练习数据。
+- 每次运行都会重新初始化，结果稳定。
+- 可以放心练习新增、修改、删除。
+
+## 1. 创建目录
+
+```
+D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day41-go-crud
+```
+
+建立：
+
+```
+day41-go-crud
+├── main.go
+├── repository.go
+├── go.mod
+└── go.sum
+```
+
+## 2. `repository.go`
+
+这次保留之前的 `GetByID()`、`List()`、`Create()`，增加 `Update()` 和 `Delete()`。
+
+```
+
+package main
+
+import "database/sql"
+
+type Student struct {
+	ID   int
+	Name string
+	Age  int
+}
+
+type StudentRepository struct {
+	db *sql.DB
+}
+
+func NewStudentRepository(db *sql.DB) *StudentRepository {
+	return &StudentRepository{db: db}
+}
+
+// 查询单个学生
+func (r *StudentRepository) GetByID(id int) (Student, error) {
+	var student Student
+
+	err := r.db.QueryRow(
+		"SELECT id, name, age FROM students WHERE id = ?",
+		id,
+	).Scan(
+		&student.ID,
+		&student.Name,
+		&student.Age,
+	)
+
+	if err != nil {
+		return Student{}, err
+	}
+	return student, nil
+}
+
+// 查询所有学生
+func (r *StudentRepository) List() ([]Student, error) {
+	rows, err := r.db.Query(
+		"SELECT id, name, age FROM students ORDER BY id",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	students := make([]Student, 0)
+
+	for rows.Next() {
+		var student Student
+
+		if err := rows.Scan(
+			&student.ID,
+			&student.Name,
+			&student.Age,
+		); err != nil {
+			return nil, err
+		}
+
+		students = append(students, student)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return students, nil
+}
+
+// 新增学生
+func (r *StudentRepository) Create(student Student) error {
+	_, err := r.db.Exec(
+		"INSERT INTO students (id, name, age) VALUES (?, ?, ?)",
+		student.ID,
+		student.Name,
+		student.Age,
+	)
+	return err
+}
+
+// 根据ID修改学生信息
+func (r *StudentRepository) Update(student Student) (int64, error) {
+	result, err := r.db.Exec(
+		"UPDATE students SET name = ?, age = ? WHERE id = ?",
+		student.Name,
+		student.Age,
+		student.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
+}
+
+// 根据ID删除学生
+func (r *StudentRepository) Delete(studentID int) (int64, error) {
+	result, err := r.db.Exec(
+		"DELETE FROM students WHERE id = ?",
+		studentID,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.RowsAffected()
+}
+
+```
+
+## 3. `main.go`
+
+下面用同一个学生完成完整的新增、查询、更新、删除过程。
+
+```
+
+package main
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"log"
+
+	_ "github.com/mattn/go-sqlite3"
+)
+
+func main() {
+	// 使用内存SQLite数据库，不修改原有students.db
+	db, err := sql.Open("sqlite3", ":memory:")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// 避免不同连接指向不同的内存数据库
+	db.SetMaxOpenConns(1)
+
+	// 初始化学生表
+	_, err = db.Exec(`
+		CREATE TABLE students (
+			id INTEGER PRIMARY KEY,
+			name TEXT NOT NULL,
+			age INTEGER NOT NULL
+		)
+	`)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	repo := NewStudentRepository(db)
+
+	// 1. Create：新增学生
+	err = repo.Create(Student{
+		ID:   1004,
+		Name: "David",
+		Age:  23,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	student, err := repo.GetByID(1004)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("After Create: %d | %s | %d\n",
+		student.ID, student.Name, student.Age)
+
+	// 2. Update：修改年龄
+	affected, err := repo.Update(Student{
+		ID:   1004,
+		Name: "David",
+		Age:  24,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Update affected: %d\n", affected)
+
+	student, err = repo.GetByID(1004)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("After Update: %d | %s | %d\n",
+		student.ID, student.Name, student.Age)
+
+	// 3. Update：尝试修改不存在的学生
+	affected, err = repo.Update(Student{
+		ID:   9999,
+		Name: "Nobody",
+		Age:  20,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Update missing affected: %d\n", affected)
+
+	// 4. Delete：删除存在的学生
+	affected, err = repo.Delete(1004)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Delete affected: %d\n", affected)
+
+	// 5. Delete：再次删除同一学生
+	affected, err = repo.Delete(1004)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("Delete again affected: %d\n", affected)
+
+	// 6. 验证删除结果
+	_, err = repo.GetByID(1004)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		fmt.Println("Student 1004 not found")
+	} else if err != nil {
+		log.Fatal(err)
+	} else {
+		log.Fatal("Student 1004 should have been deleted")
+	}
+}
+
+```
+
+这里的 `:memory:` 表示数据库只存在于当前进程的内存中，程序结束后数据就消失。
+
+设置：
+
+```
+db.SetMaxOpenConns(1)
+```
+
+是为了保证本实验中的数据库操作复用同一个底层 SQLite 连接，避免多个连接各自访问不同的内存数据库。
+
+## 4. 编译运行
+
+在 PowerShell 中：
+
+```
+cd D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day41-go-crud
+
+go mod init day41-go-crud
+
+go get github.com/mattn/go-sqlite3
+
+go run .
+```
+
+预期输出：
+
+```
+After Create: 1004 | David | 23
+Update affected: 1
+After Update: 1004 | David | 24
+Update missing affected: 0
+Delete affected: 1
+Delete again affected: 0
+Student 1004 not found
+```
+
+运行结束后可以再执行一次：
+
+```
+go run .
+```
+
+结果应当相同，因为每次程序运行都会重新创建内存数据库。
+
+# 六、Go Day41 Stage 2 最终检查
+
+今天 Go 的最后一阶段只需要两道理解题和一次运行验证。
+
+### 检查 4：Update 和 Delete 的返回值
+
+对于：
+
+```
+func (r *StudentRepository) Update(student Student) (int64, error)
+```
+
+回答：
+
+1. 为什么这次不再只返回 `error`，而是返回 `(int64, error)`？
+2. 当修改一个不存在的学生时，为什么 `Exec()` 可能返回 `nil` 错误，而 `RowsAffected()` 返回 0？
+3. 为什么执行 `UPDATE` 和 `DELETE` 时尤其需要注意 `WHERE` 条件？
+
+### 检查 5：数据库完整 CRUD
+
+现在 Repository 拥有：
+
+```
+GetByID()
+List()
+Create()
+Update()
+Delete()
+```
+
+请回答：
+
+1. 它们分别对应 CRUD 中的什么操作？
+2. 为什么 `GetByID()` 和 `List()` 使用查询 API，而 `Create()`、`Update()`、`Delete()` 通常使用 `Exec()`？
+3. 当前 `:memory:` 数据库与之前文件型 `students.db` 有什么区别？
+
+最后告诉我 `day41-go-crud` 的 `go run .` 是否成功，以及输出是否符合预期。
+
+本阶段通过后，Day41 就正式结束。 然后我们会整理完整的 `2026-10-15.md`，记录今天 LeetCode 102 Accepted、Go CRUD 练习、全部检查原始回答与订正，以及下一学习日计划。
+检查4：
+1. 为什么这次不再只返回 `error`，而是返回 `(int64, error)`？因为这次需要知道受到影响的行数，调用的RowsAffected返回值即(int64, error)
+2. 当修改一个不存在的学生时，为什么 `Exec()` 可能返回 `nil` 错误，而 `RowsAffected()` 返回 0？因为本身SQL语句执行成功，修改一个不存在的学生在SQL语句执行层面也算成功，修改一个不存在的学生等于修改0个学生成功。所以RowsAffected()返回 0，nil,受到影响的记录行数为0
+3. 为什么执行 `UPDATE` 和 `DELETE` 时尤其需要注意 `WHERE` 条件？因为不加where字段判断条件的话，UPDATE和DELETE会在数据库中的所有记录上执行，造成毁灭性的错误。
+检查5：
+1. 它们分别对应 CRUD 中的什么操作？Create()对应增，Delete()Delete()对应删，Update()对应改，GetByID()和List()对应查，总体就是增删改查。
+2. 为什么 `GetByID()` 和 `List()` 使用查询 API，而 `Create()`、`Update()`、`Delete()` 通常使用 `Exec()`？因为一般`GetByID()` 和 `List()`需要返回单行或多行结果集，而Create()`、`Update()`、`Delete()`通常不需要返回结果集。
+3. 当前 `:memory:` 数据库与之前文件型 `students.db` 有什么区别？前者是内存型数据库，生命周期绑定程序的生命周期，程序结束后就会被销毁，程序启动则会重新创建，而后者是文件型数据库，其生命周期实现了持久化，数据一般保存在硬盘内存中，不会随着程序的关闭而被销毁，且其他程序也可以共同访问该数据库，实现了数据的持久化。
+ `day41-go-crud` 的 `go run .` 成功，输出符合预期
+
+你的 Go Day41 Stage 2 检查全部通过，`day41-go-crud` 也已经实际运行成功 ✅。
+
+至此，2026 年 10 月 15 日 Day41 的 C++ 和 Go 两条学习主线全部完成。
+
+今天有两个明确成果：C++ 独立完成 LeetCode 102《二叉树的层序遍历》并提交通过；Go 在原有 `GetByID()`、`List()`、`Create()` 的基础上实现了 `Update()` 和 `Delete()`，完成了基础 CRUD 的完整实验。
+
+先按照固定的五部分格式完成最后的批改。
+
+# 一、Go Day41 Stage 2 检查批改
+
+## 检查 4：`Update()`、`Delete()` 和受影响行数
+
+### 1. 问题
+
+为什么返回 `(int64, error)`？为什么更新不存在的学生可能不报错？为什么 `UPDATE`、`DELETE` 必须注意 `WHERE` 条件？
+
+### 2. 我的回答
+
+> 1. 为什么这次不再只返回 `error`，而是返回 `(int64, error)`？因为这次需要知道受到影响的行数，调用的RowsAffected返回值即(int64, error)
+> 2. 当修改一个不存在的学生时，为什么 `Exec()` 可能返回 `nil` 错误，而 `RowsAffected()` 返回 0？因为本身SQL语句执行成功，修改一个不存在的学生在SQL语句执行层面也算成功，修改一个不存在的学生等于修改0个学生成功。所以RowsAffected()返回 0，nil,受到影响的记录行数为0
+> 3. 为什么执行 `UPDATE` 和 `DELETE` 时尤其需要注意 `WHERE` 条件？因为不加where字段判断条件的话，UPDATE和DELETE会在数据库中的所有记录上执行，造成毁灭性的错误。
+
+### 3. 订正
+
+✅ 三问全部正确。
+
+第一问： `RowsAffected()` 返回 `(int64, error)`，所以可以将受影响行数以及错误继续返回给调用者。
+
+```
+func (r *StudentRepository) Update(student Student) (int64, error) {
+    result, err := r.db.Exec(
+        "UPDATE students SET name = ?, age = ? WHERE id = ?",
+        student.Name,
+        student.Age,
+        student.ID,
+    )
+    if err != nil {
+        return 0, err
+    }
+
+    return result.RowsAffected()
+}
+```
+
+第二问： 你已经正确区分了“SQL 执行成功”和“实际更新到记录”。
+
+当执行：
+
+```
+UPDATE students SET age = 20 WHERE id = 9999;
+```
+
+而数据库中没有 ID 为 9999 的学生时，语句仍然可以成功执行，只是没有匹配的记录，因而在当前 SQLite 示例中受影响行数为 0。
+
+第三问： 你的理解完全正确。需要记住，`WHERE` 不是 `UPDATE` 和 `DELETE` 在语法上必须具备的部分，但在根据特定学生操作数据时，它是至关重要的安全条件。
+
+### 4. 相关示例
+
+假设数据库有 100 名学生。
+
+```
+UPDATE students SET age = 20 WHERE id = 1002;
+```
+
+只针对 ID 为 1002 的记录。
+
+而：
+
+```
+UPDATE students SET age = 20;
+```
+
+会针对表中所有记录执行更新。
+
+删除操作同理：
+
+```
+DELETE FROM students WHERE id = 1002;
+```
+
+和：
+
+```
+DELETE FROM students;
+```
+
+含义完全不同。后者会删除表中全部记录。
+
+### 5. 面试专用回答
+
+> `Update()` 和 `Delete()` 可以通过 `Exec()` 执行 SQL，并通过 `RowsAffected()` 返回受影响行数，同时返回 `error` 报告执行异常。SQL 执行成功不一定代表存在匹配记录，例如按主键更新不存在的数据时，影响行数可以为 0。此外，UPDATE 和 DELETE 必须根据业务需求正确设置 WHERE 条件，否则可能误操作整张表。
+
+## 检查 5：CRUD 与内存数据库、文件数据库
+
+### 1. 问题
+
+Repository 中的五个方法如何对应 CRUD？为什么使用不同的数据库 API？内存型和文件型 SQLite 有什么区别？
+
+### 2. 我的回答
+
+> 1. 它们分别对应 CRUD 中的什么操作？Create()对应增，Delete()Delete()对应删，Update()对应改，GetByID()和List()对应查，总体就是增删改查。
+> 2. 为什么 `GetByID()` 和 `List()` 使用查询 API，而 `Create()`、`Update()`、`Delete()` 通常使用 `Exec()`？因为一般`GetByID()` 和 `List()`需要返回单行或多行结果集，而Create()`、`Update()`、`Delete()\`通常不需要返回结果集。
+> 3. 当前 `:memory:` 数据库与之前文件型 `students.db` 有什么区别？前者是内存型数据库，生命周期绑定程序的生命周期，程序结束后就会被销毁，程序启动则会重新创建，而后者是文件型数据库，其生命周期实现了持久化，数据一般保存在硬盘内存中，不会随着程序的关闭而被销毁，且其他程序也可以共同访问该数据库，实现了数据的持久化。
+
+### 3. 订正
+
+✅ 核心全部正确，有两处表述值得规范。
+
+第一，CRUD 对应关系：
+
+| CRUD       | Repository 方法        | SQL 操作        |
+| ---------- | -------------------- | ------------- |
+| Create（创建） | `Create()`           | `INSERT INTO` |
+| Read（读取）   | `GetByID()`、`List()` | `SELECT`      |
+| Update（更新） | `Update()`           | `UPDATE`      |
+| Delete（删除） | `Delete()`           | `DELETE`      |
+
+第二，API 的选择：
+
+你的理解正确。普通的 `SELECT` 查询需要读取行结果，通常使用 `QueryRow()` 或 `Query()`；不需要返回行结果集的普通写操作通常使用 `Exec()`。
+
+需要补充：这不是绝对规则，例如某些数据库支持 `INSERT ... RETURNING`，此时也可能使用查询 API 读取返回的数据。但对于我们目前的 SQLite CRUD 实验，你的选型完全正确。
+
+第三，数据库生命周期：
+
+你提到“硬盘内存”，这里应该区分：
+
+- 内存（RAM）：保存 `:memory:` 数据库的数据。
+- 磁盘存储（例如 SSD、硬盘）：保存 `students.db` 数据库文件。
+
+另外，`:memory:` 数据库的生命周期更严格地说是与创建它的 SQLite 底层连接关联，而不单纯是与整个程序生命周期绑定。
+
+一个新的 SQLite 连接使用 `:memory:`，通常会创建自己的独立内存数据库；对应连接关闭后，该数据库就会消失。
+
+这也是我们之前使用：
+
+```
+db.SetMaxOpenConns(1)
+```
+
+的重要原因：确保实验操作复用同一个底层连接，避免意外访问不同的内存数据库。
+
+### 4. 相关示例
+
+内存数据库：
+
+```
+db, err := sql.Open("sqlite3", ":memory:")
+```
+
+适合学习实验或需要隔离数据的简单测试，重启程序后重新初始化。
+
+文件数据库：
+
+```
+db, err := sql.Open("sqlite3", "students.db")
+```
+
+数据存入数据库文件，程序退出后通常仍然保留，下次重新打开可以继续读取。
+
+文件型 SQLite 也可以由其他进程访问，但并发读写仍然受到 SQLite 事务和锁机制的约束，并不是所有操作都能无限制同时执行。
+
+### 5. 面试专用回答
+
+> CRUD 分别对应数据库的新增、查询、更新和删除操作。普通查询通常通过 QueryRow 或 Query 获取结果，普通写操作通常通过 Exec 执行，并可结合 RowsAffected 判断受影响行数。SQLite 的内存数据库主要将数据保存在内存中，生命周期与底层连接相关；文件数据库将数据持久化保存到磁盘文件中，程序退出后仍可重新打开并读取。
+
+# 二、Go Day41 最终验收
+
+你确认了 `day41-go-crud` 执行成功，输出符合预期。因此我们可以正式记录：
+
+| 实验内容                    | 状态                                                    |
+| ----------------------- | ----------------------------------------------------- |
+| `Create()` 新增 David     | \<icon name="check-circle-2" color="success" inline/> |
+| `GetByID()` 查询学生        | \<icon name="check-circle-2" color="success" inline/> |
+| `Update()` 修改年龄 23 → 24 | \<icon name="check-circle-2" color="success" inline/> |
+| 更新不存在的学生，受影响 0 行        | \<icon name="check-circle-2" color="success" inline/> |
+| `Delete()` 删除 David     | \<icon name="check-circle-2" color="success" inline/> |
+| 再次删除，受影响 0 行            | \<icon name="check-circle-2" color="success" inline/> |
+| 删除后查询返回 `sql.ErrNoRows` | \<icon name="check-circle-2" color="success" inline/> |
+
+Go Day41 正式完成。
+
+这里还保留一个小的验证记录：你没有单独反馈 `day41-go-exec-result` 的运行情况，但后续完整 CRUD 程序已实际验证 `RowsAffected()` 的作用，因此不影响今天核心目标的完成。
+
+# 三、Day41 完整学习笔记已生成
+
+\<row align="center" gap={3}>   \<icon name="file-text" size="2xl" color="secondary"/>   \<box flex="1" gap={1}>     \*\*2026-10-15.md\*\*&#x20;
+
+\<text color="secondary" size="xs">1002 行 · C++ BFS + LeetCode 102 + Go Repository CRUD\</text>
+
+下载 Day41 完整学习笔记 \</box> \</row>
+
+笔记保留了今天全部检查题的问题、你的原始回答、订正、相关示例和面试专用回答，以及完整实验代码、PowerShell 运行命令、实际验收状态和 Git 提交步骤。
+
+建议保存到：
+
+```
+D:\Campus_Recruit_2027\09_StudyWorkspace\study-notes\2026-10-15.md
+```
+
+## 四、Day41 学习总结
+
+| 主线  | 今日最重要成果                                        |
+| --- | ---------------------------------------------- |
+| C++ | 独立完成 LeetCode 102，Accepted                     |
+| C++ | 掌握 BFS 按层分组及 `O(w)` 空间分析                       |
+| Go  | 理解 `Exec()`、`sql.Result`、`RowsAffected()`      |
+| Go  | 实现 `GetByID`、`List`、`Create`、`Update`、`Delete` |
+| Go  | 完整 CRUD 实验运行成功                                 |
+
+## 五、下一学习日 Day42 计划
+
+C++： 从二叉树遍历过渡到节点操作，学习 LeetCode 226《翻转二叉树》，继续巩固递归、指针和空间复杂度分析。
+
+Go： 不再停留在单独的数据库练习，开始把已经实现的 Repository 接入 `net/http`，逐步完成能够通过 HTTP 请求操作数据的 REST API，为 10 月底的项目 MVP 做准备。
+
+## 六、Git 提交
+
+保存笔记后，在本机 PowerShell 中检查并提交：
+
+```
+cd D:\Campus_Recruit_2027
+
+git status --short
+```
+
+然后按照笔记末尾列出的指定路径进行 `git add`，检查暂存区：
+
+```
+git status --short
+git diff --cached --name-status
+```
+
+确认无误再执行：
+
+```
+git commit -m "study: complete Oct 15 tree BFS and Go CRUD"
+git push origin main
+git status
+```
+
+Day41 正式结束。 今天的 C++ 算法实践和 Go 数据库工程基础都达到了既定目标，下一步开始让 Go 的数据库能力真正服务于 HTTP 接口开发。
