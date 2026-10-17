@@ -1,0 +1,1494 @@
+你的 C++ Day43 Stage 2 已通过，LeetCode 100《相同的树》独立提交成功 ✅。
+
+这次有两个值得肯定的进步：你已经能够独立写出双节点递归，而且使用 `&&` 的短路特性，将节点值判断与左右子树比较组合起来。
+
+不过，你对“递归终止条件”的解释有一个小偏差，需要特别订正：当前节点值比较、左子树递归和右子树递归，是三个判断条件，但不是三个递归终止条件。
+
+下面按照固定格式批改。
+
+# 一、C++ Day43 Stage 2 检查批改
+
+## 检查 4：LeetCode 100 独立实现
+
+### 1. 问题
+
+独立实现 `isSameTree()`，给出提交结果，并解释递归终止条件。
+
+### 2. 我的回答
+
+你提交的核心代码：
+
+```
+class Solution {
+public:
+    bool isSameTree(TreeNode* p, TreeNode* q) {
+        if(p == nullptr || q == nullptr){
+            return p == q;
+        }
+        return (p -> val == q -> val) &&
+               isSameTree(p -> left, q -> left) &&
+               isSameTree(p -> right, q -> right);
+    }
+};
+```
+
+提交结果：
+
+> 提交正确
+
+关于递归条件，你的回答：
+
+> 第一个解决节点存储的数据值是否相同，第二个解决两棵树的左子树是否相同，第三个解决两棵树的右子树是否相同
+
+### 3. 订正
+
+✅ 代码完全正确，LeetCode 提交通过。
+
+你的代码写得很简洁，没有多余的判断。
+
+先看：
+
+```
+if (p == nullptr || q == nullptr) {
+    return p == q;
+}
+```
+
+这段代码同时处理：
+
+| p  | q  | 返回值     |
+| -- | -- | ------- |
+| 空  | 空  | `true`  |
+| 空  | 非空 | `false` |
+| 非空 | 空  | `false` |
+
+只有当两者都非空时，才继续执行下面的代码。
+
+随后：
+
+```
+return (p->val == q->val)
+    && isSameTree(p->left, q->left)
+    && isSameTree(p->right, q->right);
+```
+
+这是三个必须满足的条件：
+
+1. 当前节点值相同。
+2. 左子树相同。
+3. 右子树相同。
+
+但严格区分：
+
+- `if (p == nullptr || q == nullptr)`：明确的递归终止条件。
+- `p->val == q->val`：当前节点值的比较。
+- 两次 `isSameTree()`：递归处理两个子问题。
+- `&&`：通过短路求值，在发现不同时提前返回。
+
+特别是，当节点值不同时，后面的两次递归根本不会执行。
+
+### 4. 相关示例
+
+例如：
+
+```
+树 A：          树 B：
+
+   1              1
+  / \            / \
+ 2   3          2   4
+```
+
+执行：
+
+```
+isSameTree(1, 1)
+       ↓
+当前值相同
+       ↓
+isSameTree(2, 2) → true
+       ↓
+isSameTree(3, 4) → false
+       ↓
+最终返回 false
+```
+
+如果两个根节点的值直接不同：
+
+```
+isSameTree(1, 9)
+```
+
+那么：
+
+```
+p->val == q->val
+```
+
+立即为 `false`，由于 `&&` 短路，左右子树不再递归比较。
+
+### 5. 面试专用回答
+
+> 判断两棵二叉树是否相同，可以采用双节点递归。首先处理空节点情况：两个节点都为空则相同，只有一方为空则不同。之后比较当前节点值，并递归比较对应的左右子树，三个条件全部满足才返回 true。通过逻辑与的短路特性，可以在发现不同后提前结束比较。
+
+## 检查 5：时间与空间复杂度
+
+### 1. 问题
+
+分析最坏时间复杂度、递归空间复杂度以及提前结束的情况。
+
+### 2. 我的回答
+
+> 1. 为什么最坏时间复杂度可以表示为 `O(n)`？当两棵相同的树均有n个节点时，最坏需要比对n对节点，每次比较为O(1)
+> 2. 为什么递归额外空间复杂度是 `O(h)`？因为递归额外空间复杂度取决于递归调用栈最大的深度，而递归调用栈的最大的深度即树的最大深度h
+> 3. 平衡二叉树和退化为链表的情况分别是多少？O(log n) 和 O(n)
+> 4. 如果一开始发现两个根节点值不同，后续还需要递归比较左右子树吗？为什么？不需要，因为一开始就发现两个根节点存储的数据值不同，那这两棵树必定不是同一棵树，所以可以直接返回，不用耗费复杂度再去递归比较左右子树
+
+### 3. 订正
+
+✅ 四问全部正确。
+
+你已经准确掌握了递归复杂度的分析方法。
+
+在两棵树都有 `n` 个节点、结构和值完全相同的情况下，需要比较全部对应节点，因此时间复杂度为 `O(n)`。
+
+递归栈最大深度与树高 `h` 有关，因此空间复杂度为 `O(h)`。
+
+| 树形    | 时间复杂度  | 递归额外空间     |
+| ----- | ------ | ---------- |
+| 平衡二叉树 | `O(n)` | `O(log n)` |
+| 退化为链表 | `O(n)` | `O(n)`     |
+| 一般二叉树 | `O(n)` | `O(h)`     |
+
+还有一个小的严谨性细节：这里使用的是两棵规模和形态相同、需要完整比较的情况。对于一开始就发现不同的输入，实际执行成本可能更低。
+
+### 4. 相关示例
+
+两棵树根节点不同：
+
+```
+树 A：1       树 B：9
+```
+
+执行：
+
+```
+isSameTree(p, q);
+```
+
+只需要比较一次根节点值，即可返回：
+
+```
+false
+```
+
+实际时间开销为 `O(1)`。
+
+但算法的最坏情况仍然需要完整比较所有节点，因此最坏时间复杂度为 `O(n)`。
+
+### 5. 面试专用回答
+
+> 判断相同二叉树时，最坏情况下需要逐一比较 n 对对应节点，每次比较为常数时间，因此时间复杂度为 O(n)。递归调用栈深度取决于树高 h，额外空间复杂度为 O(h)。对于平衡二叉树是 O(log n)，对于退化为链表的二叉树是 O(n)。如果提前发现节点值或结构不同，可以利用短路判断避免继续递归。
+
+# 二、C++ Day43 正式完成
+
+| 学习内容                    | 验收结果           |
+| ----------------------- | -------------- |
+| 区分节点地址与节点值              |                |
+| 两个节点指针的空值处理             |                |
+| 同步递归比较左右子树              |                |
+| `tree_compare_demo.cpp` | &#x20;运行通过     |
+| LeetCode 100《相同的树》      | &#x20;Accepted |
+| 递归时间与空间复杂度              |                |
+
+截至今天，最近连续完成的二叉树算法题包括 LeetCode 104、102、226、100。
+
+接下来 C++ 不继续追加新题，正式进入今天的 Go 主线。
+
+# 三、Go Day43 Stage 1：接收客户端发送的 JSON 请求体
+
+今天我们开始实现 `POST /students`。
+
+Day42，你已经打通了从数据库到客户端的数据流：
+
+```
+客户端发送 GET
+        ↓
+Handler
+        ↓
+Repository 查询 SQLite
+        ↓
+Student 结构体
+        ↓
+JSON 响应客户端
+```
+
+Day43 要增加相反方向：
+
+```
+客户端发送 POST + JSON
+        ↓
+Handler 读取请求体
+        ↓
+JSON 解码成 Go 结构体
+        ↓
+校验学生数据
+        ↓
+Repository.Create()
+        ↓
+SQLite 保存记录
+```
+
+今天 Stage 1 先学习接收和解析 JSON，不立即写数据库。Stage 2 再接入已有的 `Repository.Create()`。
+
+## 1. GET 和 POST 的区别
+
+昨天你发送：
+
+```
+GET /students/1002
+```
+
+学生 ID 在 URL 路径里。
+
+而新增一名学生时，需要提供多个字段：
+
+```
+{
+  "id": 1005,
+  "name": "Eva",
+  "age": 22
+}
+```
+
+因此可以发送：
+
+```
+POST /students
+Content-Type: application/json
+```
+
+并将 JSON 数据放入 HTTP 请求体（Request Body）。
+
+注意：
+
+- `GET /students/1002`：查询已存在的学生。
+- `POST /students`：请求创建新的学生。
+- `Content-Type: application/json`：说明请求体的数据格式是 JSON。
+
+## 2. `json.Encoder` 和 `json.Decoder` 的区别
+
+昨天：
+
+```
+json.NewEncoder(w).Encode(student)
+```
+
+是将 Go 数据转换为 JSON，发送给客户端。
+
+今天：
+
+```
+json.NewDecoder(r.Body).Decode(&student)
+```
+
+方向正好相反。
+
+| 方法         | 数据流向      | 作用          |
+| ---------- | --------- | ----------- |
+| `Encode()` | Go → JSON | 生成 HTTP 响应  |
+| `Decode()` | JSON → Go | 解析 HTTP 请求体 |
+
+HTTP 请求与响应中的 JSON 转换
+
+客户端请求体（JSON）
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+Decode(&student)
+
+Go 结构体
+
+```
+Student{
+    ID:   1005,
+    Name: "Eva",
+    Age:  22,
+}
+```
+
+Encode(student)
+
+服务器响应体（JSON）
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+你需要重点理解：
+
+```
+&student
+```
+
+为什么有 `&`？
+
+因为 `Decode()` 需要修改 `student` 这个变量，将解析出的 JSON 字段值写入结构体。
+
+这与之前数据库查询使用：
+
+```
+rows.Scan(&student.ID, &student.Name, &student.Age)
+```
+
+存在相似之处：都需要把外部读取的数据写入 Go 变量。
+
+不过 `Scan()` 接收多个目标字段地址，而 `Decode()` 这里接收整个结构体的地址。
+
+# 四、Stage 1 实验：只解析 JSON，不保存数据库
+
+我们先创建一个练习接口：
+
+```
+POST /students/preview
+```
+
+它只负责解析客户端 JSON，然后将解析结果返回。
+
+这个接口不会真正新增学生，因此使用 `preview` 作为路径，避免和下一阶段正式的新增接口混淆。
+
+## 1. 创建目录
+
+```
+D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day43-go-post-students
+```
+
+新建：
+
+```
+main.go
+```
+
+## 2. 完整代码
+
+```
+
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+)
+
+// Student表示一名学生
+type Student struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+// ErrorResponse用于统一错误响应
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// writeJSON负责写入JSON响应
+func writeJSON(w http.ResponseWriter, status int, data any) {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("write JSON failed: %v", err)
+	}
+}
+
+// studentPreviewHandler只解析JSON，不写入数据库
+func studentPreviewHandler(w http.ResponseWriter, r *http.Request) {
+	var student Student
+
+	// 将HTTP请求体中的JSON解析到student
+	err := json.NewDecoder(r.Body).Decode(&student)
+	if err != nil {
+		writeJSON(
+			w,
+			http.StatusBadRequest,
+			ErrorResponse{Error: "invalid JSON body"},
+		)
+		return
+	}
+
+	// 简单的数据有效性检查
+	if student.ID <= 0 || student.Name == "" ||
+		student.Age <= 0 {
+		writeJSON(
+			w,
+			http.StatusBadRequest,
+			ErrorResponse{Error: "invalid student data"},
+		)
+		return
+	}
+
+	// 这里只返回解析结果，不执行数据库插入
+	writeJSON(w, http.StatusOK, student)
+}
+
+func main() {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc(
+		"POST /students/preview",
+		studentPreviewHandler,
+	)
+
+	log.Println("Preview server listening on http://127.0.0.1:8081")
+
+	if err := http.ListenAndServe("127.0.0.1:8081", mux); err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+
+这里使用 `8081`，是为了避免你昨天的 Day42 HTTP 服务仍在使用 `8080` 时发生端口冲突。
+
+目前的字段校验只是练习用的简单规则。例如 `Age <= 0` 被视为非法，但实际业务中是否允许 0 岁学生，需要根据需求决定。更严谨的请求体校验、大小限制和额外 JSON 内容检查，后续再逐步完善。
+
+## 3. 运行程序
+
+打开 PowerShell：
+
+```
+cd D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day43-go-post-students
+```
+
+初始化模块：
+
+```
+go mod init day43-go-post-students
+```
+
+今天 Stage 1 只使用 Go 标准库，不需要安装额外依赖。
+
+启动：
+
+```
+go run .
+```
+
+预期：
+
+```
+Preview server listening on http://127.0.0.1:8081
+```
+
+## 4. 发送 POST 请求
+
+另开一个 PowerShell 终端。
+
+我们今天使用 `Invoke-WebRequest` 发送 JSON 请求，避免 Windows PowerShell 中 `curl.exe -d` 的引号转义问题。
+
+先定义请求体：
+
+```
+$body = '{"id":1005,"name":"Eva","age":22}'
+```
+
+然后发送：
+
+```
+$response = Invoke-WebRequest `
+    -Uri "http://127.0.0.1:8081/students/preview" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+查看结果：
+
+```
+$response.StatusCode
+$response.Content
+```
+
+预期：
+
+```
+200
+{"id":1005,"name":"Eva","age":22}
+```
+
+这说明服务端已经成功：
+
+```
+读取 HTTP 请求体
+        ↓
+Decode(&student)
+        ↓
+写入 Go Student 结构体
+        ↓
+通过 JSON 返回结果
+```
+
+但目前还没有写入数据库。下一阶段才会将解析出的 `student` 传给：
+
+```
+repo.Create(student)
+```
+
+# 五、Go Day43 Stage 1 检查
+
+这一阶段只做三道题，不增加额外理论负担。
+
+### 检查 1：JSON 请求体与解码
+
+对于：
+
+```
+var student Student
+
+err := json.NewDecoder(r.Body).Decode(&student)
+```
+
+回答：
+
+1. `r.Body` 保存的是什么？
+2. `Decode(&student)` 的作用是什么？
+3. 为什么传入的是 `&student`，而不是 `student`？
+
+### 检查 2：HTTP 请求校验
+
+对于：
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+以及：
+
+```
+{"id":"abc","name":"Eva","age":22}
+```
+
+请回答：
+
+1. 哪个 JSON 能够被当前 `Student` 结构体正常解码？
+2. 第二个请求为什么会出现解码错误？
+3. 为什么在调用 `repo.Create()` 之前，还需要检查学生 ID、姓名、年龄是否满足业务要求？
+
+### 检查 3：从 JSON 到数据库
+
+目前我们有：
+
+```
+json.NewDecoder(r.Body).Decode(&student)
+```
+
+而之前已经实现：
+
+```
+repo.Create(student)
+```
+
+请回答：
+
+1. 这两个操作应该分别发生在 Handler 和 Repository 中的哪一层？
+2. 为什么 `POST /students/preview` 当前不能真正新增学生？
+3. 下一阶段要实现真正的 `POST /students`，你认为最关键的新增步骤是什么？
+
+最后告诉我 `go run .` 是否成功，以及 POST 请求是否返回预期的 JSON。
+
+通过后，我们进入 Go Day43 Stage 2：复用已有 Repository，实现真正写入 SQLite 的 `POST /students` 接口，并处理 `201 Created`、`400 Bad Request` 和重复主键导致的 `409 Conflict`。
+
+这一步完成后，你的后端就将同时具备 GET 查询和 POST 新增功能，继续向本月底的可运行项目 MVP 推进。
+
+你的 Go Day43 Stage 1 三组检查全部通过，`POST /students/preview` 已成功运行 ✅。
+
+从回答来看，你已经理解了 HTTP 请求体、JSON 解码、结构体赋值，以及 Handler 和 Repository 之间的职责关系。
+
+不过检查 2 的第二问存在一个需要纠正的概念：JSON 字段类型不匹配造成的解码错误，与解码成功后的业务参数校验错误，是两个不同阶段的问题。
+
+我们先完成逐题批改，再进入 Go Day43 Stage 2：真正实现 `POST /students`，向 SQLite 插入学生记录。
+
+# 一、Go Day43 Stage 1 检查批改
+
+## 检查 1：JSON 请求体与解码
+
+### 问题
+
+对于：
+
+```
+var student Student
+err := json.NewDecoder(r.Body).Decode(&student)
+```
+
+解释 `r.Body`、`Decode()` 和 `&student` 的作用。
+
+### 我的回答
+
+> 1. `r.Body` 保存的是什么？保存的是客户端请求的数据体，保存学生记录的具体信息
+> 2. `Decode(&student)` 的作用是什么？将解析出来的JSON字段值保存到Go Struct变量中
+> 3. 为什么传入的是 `&student`，而不是 `student`？因为需要修改这个变量的值，所以必须传入地址，通过指针修改原对象的值
+
+### 订正
+
+✅ 三问全部正确。
+
+需要补充一个准确性细节：`r.Body` 是一个 `io.ReadCloser`，提供读取 HTTP 请求体的接口，并不意味着整个请求体一定已经被完整保存在某个内存变量中。
+
+`Decode(&student)` 会从请求体读取 JSON 数据，解析后写入 `student`。
+
+你对于为什么传入地址的理解完全正确。
+
+### 相关示例
+
+请求体：
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+解码：
+
+```
+var student Student
+
+err := json.NewDecoder(r.Body).Decode(&student)
+```
+
+如果成功：
+
+```
+student.ID   // 1005
+student.Name // "Eva"
+student.Age  // 22
+```
+
+### 面试专用回答
+
+> HTTP 请求体可以通过 `r.Body` 读取，它实现了 `io.ReadCloser` 接口。Go 可以通过 `json.NewDecoder(r.Body).Decode(&student)` 将 JSON 数据解码到结构体中。由于需要修改目标结构体的字段值，因此应传入结构体地址，并检查 Decode 返回的错误。
+
+## 检查 2：JSON 解码错误与业务校验
+
+### 问题
+
+以下两个请求中，哪个可以正常解码？为什么另一个会失败？为什么还需要业务校验？
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+```
+{"id":"abc","name":"Eva","age":22}
+```
+
+### 我的回答
+
+> 1. 哪个 JSON 能够被当前 `Student` 结构体正常解码？第一个
+> 2. 第二个请求为什么会出现解码错误？因为解析出来的字段值不满足业务逻辑要求，id必须是整型，而解析出来的id是"abc"是字符串且不是能转换成整数的字符串。
+> 3. 为什么在调用 `repo.Create()` 之前，还需要检查学生 ID、姓名、年龄是否满足业务要求？因为需要区分用户的请求是否合理，否则该记录可能会对原有数据库数据造成影响。
+
+### 订正
+
+✅ 第一、三问正确，第二问的结论正确，但原因需要规范。
+
+这里必须区分两个阶段。
+
+第一阶段：JSON 解码与类型检查
+
+假设结构体：
+
+```
+type Student struct {
+    ID   int    `json:"id"`
+    Name string `json:"name"`
+    Age  int    `json:"age"`
+}
+```
+
+对于：
+
+```
+{"id":"abc","name":"Eva","age":22}
+```
+
+`id` 是 JSON 字符串，但是目标字段 `ID` 是 Go `int`。
+
+所以 `encoding/json` 无法将这个字符串直接赋值给整数类型字段，`Decode()` 会返回类型不匹配错误。
+
+这属于解码阶段的类型错误，不是业务规则检查失败。
+
+甚至下面这种写法：
+
+```
+{"id":"1005","name":"Eva","age":22}
+```
+
+在当前结构体定义下也会解码失败。
+
+虽然 `"1005"` 看起来可以转换为整数，但 `encoding/json` 默认不会自动把 JSON 字符串转换为 Go `int` 字段。
+
+第二阶段：业务参数校验
+
+如果客户端发送：
+
+```
+{"id":-1,"name":"","age":0}
+```
+
+这个 JSON 的类型完全正确：
+
+```
+id   → 整数
+name → 字符串
+age  → 整数
+```
+
+因此，`Decode()` 可以成功。
+
+但是它不满足我们当前规定的业务条件：
+
+```
+student.ID > 0
+student.Name != ""
+student.Age > 0
+```
+
+这才属于业务参数校验失败。
+
+### 相关示例
+
+JSON 数据处理的三个阶段
+
+1\. JSON 解码
+
+检查 JSON 语法和目标字段类型能否正确解析。
+
+例如 `"id":"abc"` 无法解码到 int。
+
+2\. 参数校验
+
+检查解码后的学生数据是否满足业务要求。
+
+例如 ID 为负数、姓名为空等。
+
+3\. 数据库存储
+
+调用 Repository，通过 INSERT 保存数据。
+
+例如检查是否存在重复主键。
+
+### 面试专用回答
+
+> HTTP JSON 请求通常需要先进行解码和类型检查，再进行业务参数校验。解码阶段负责将 JSON 映射为 Go 数据类型，类型不匹配会导致 Decode 返回错误；业务校验则负责判断已经成功解码的数据是否满足实际规则，例如 ID 必须为正数、姓名不能为空。通过校验后，才应该将数据交给 Repository 执行持久化操作。
+
+## 检查 3：从 JSON 请求到数据库插入
+
+### 问题
+
+`Decode()` 和 `repo.Create()` 分别属于哪一层？为什么当前预览接口没有插入数据？如何升级为真正的 POST API？
+
+### 我的回答
+
+> 1. 这两个操作应该分别发生在 Handler 和 Repository 中的哪一层？前者发生在Handler层，后者发生在Repository层
+> 2. 为什么 `POST /students/preview` 当前不能真正新增学生？因为当前只是将客户请求中的数据解码后再编码发回给用户，没有真正调用repo.Create(student)，所以不能真正新增学生
+> 3. 下一阶段要实现真正的 `POST /students`，你认为最关键的新增步骤是什么？加入Repository层逻辑，调用repo.Create(student)
+
+### 订正
+
+✅ 全部正确。
+
+再规范一下：`repo.Create(student)` 的调用动作可以发生在 Handler 中，但 `Create()` 方法内部的具体数据库操作属于 Repository 层。
+
+这和你今天的理解并不冲突。
+
+### 相关示例
+
+```
+// Handler 中
+var student Student
+
+if err := json.NewDecoder(r.Body).Decode(&student); err != nil {
+    // 处理解码错误
+    return
+}
+
+// 校验完成后，调用 Repository
+err := repo.Create(student)
+```
+
+对应：
+
+```
+Handler
+  解析 JSON
+  参数校验
+  调用 repo.Create()
+       ↓
+Repository
+  执行 INSERT INTO
+       ↓
+SQLite
+```
+
+### 面试专用回答
+
+> 在 Go HTTP 后端中，Handler 负责读取和解码请求体、执行基础参数校验以及组织 HTTP 响应。Repository 负责具体数据库持久化操作。实现 POST 新增接口时，可以在 Handler 解码和校验请求后调用 Repository 的 Create 方法，并根据返回错误决定响应状态码。
+
+# 二、Go Day43 Stage 1 验收
+
+| 内容                          | 状态  |
+| --------------------------- | --- |
+| `r.Body` 请求体读取              |     |
+| `json.Decoder` 解码           |     |
+| 结构体地址传参                     |     |
+| JSON 类型错误与业务错误区分            | 已订正 |
+| Handler / Repository 职责     |     |
+| `POST /students/preview` 运行 |     |
+
+Stage 1 正式通过。
+
+接下来进入今天的最后一个阶段。
+
+# 三、Go Day43 Stage 2：真正实现 POST /students
+
+## 1. 我们要实现什么？
+
+昨天已经完成：
+
+```
+GET /students         查询全部学生
+GET /students/{id}    查询指定学生
+```
+
+今天新增：
+
+```
+POST /students        新增学生
+```
+
+例如客户端发送：
+
+```
+POST /students
+Content-Type: application/json
+```
+
+请求体：
+
+```
+{
+  "id": 1005,
+  "name": "Eva",
+  "age": 22
+}
+```
+
+服务器执行：
+
+```
+读取 JSON 请求
+       ↓
+Decode(&student)
+       ↓
+校验学生信息
+       ↓
+repo.Create(student)
+       ↓
+SQLite 插入学生
+       ↓
+返回 201 Created
+```
+
+这里有一个新的 HTTP 状态码。
+
+### `201 Created` 是什么？
+
+之前我们已经学过：
+
+| 状态码                       | 含义       |
+| ------------------------- | -------- |
+| 200 OK                    | 请求成功     |
+| 400 Bad Request           | 客户端请求错误  |
+| 404 Not Found             | 请求的资源不存在 |
+| 500 Internal Server Error | 服务端内部错误  |
+
+今天新增：
+
+| 状态码          | 含义            |
+| ------------ | ------------- |
+| 201 Created  | 成功创建新的资源      |
+| 409 Conflict | 请求与当前资源状态存在冲突 |
+
+例如：
+
+第一次插入：
+
+```
+id = 1005
+```
+
+数据库没有该学生，插入成功，返回：
+
+```
+201 Created
+```
+
+第二次插入同样的：
+
+```
+id = 1005
+```
+
+由于 ID 是主键，会产生唯一约束冲突。
+
+对于这个 API，我们希望将其转换为：
+
+```
+409 Conflict
+```
+
+注意：`409` 是 Handler 根据数据库错误进行的 HTTP 语义映射，不是数据库直接返回 HTTP 状态码。
+
+# 四、继续复用 Day42 的 Repository
+
+今天不重新实现 CRUD。
+
+之前已经有：
+
+```
+func (r *StudentRepository) Create(student Student) error {
+    _, err := r.db.Exec(
+        "INSERT INTO students (id, name, age) VALUES (?, ?, ?)",
+        student.ID,
+        student.Name,
+        student.Age,
+    )
+    return err
+}
+```
+
+所以真正的 POST Handler 只需要在解码和校验后调用：
+
+```
+err := repo.Create(student)
+```
+
+我们把 Day42 的 HTTP 项目复制到 Day43 目录中，保留两个 GET API，再增加 POST API。
+
+## 1. 复制已有 Repository
+
+在 PowerShell 中执行：
+
+```
+Copy-Item `
+  "D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day42-go-http-api\repository.go" `
+  "D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day43-go-post-students\repository.go"
+```
+
+复制后：
+
+```
+day43-go-post-students
+├── main.go
+├── repository.go
+├── go.mod
+└── go.sum
+```
+
+今天 Stage 1 已经执行过 `go mod init`，不需要重复初始化模块。
+
+但因为现在要使用 SQLite，需要添加驱动：
+
+```
+cd D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day43-go-post-students
+
+go get github.com/mattn/go-sqlite3
+```
+
+## 2. 为什么需要识别 SQLite 的主键错误？
+
+你之前在 Repository 中直接返回：
+
+```
+return err
+```
+
+这很好，数据库访问层没有擅自决定 HTTP 状态码。
+
+但 Handler 需要识别这个错误是否代表主键冲突。
+
+`github.com/mattn/go-sqlite3` 提供 `sqlite3.Error`，其中包含 SQLite 错误代码。
+
+我们可以用：
+
+```
+var sqliteErr sqlite3.Error
+
+errors.As(err, &sqliteErr)
+```
+
+判断错误是否属于 SQLite 驱动错误，再检查具体错误代码。
+
+今天暂时只需要知道它的用途：将 SQLite 的主键或唯一约束错误识别出来，并映射为 HTTP 409。
+
+更深入的 SQLite 错误体系后续再学。
+
+# 五、完整 main.go
+
+将 Day43 目录中的 `main.go` 替换为下面的代码。
+
+它保留 Day42 已有的两个 GET API，同时新增 POST API。
+
+```
+
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	sqlite3 "github.com/mattn/go-sqlite3"
+)
+
+// JSON错误响应
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// 统一写入JSON响应
+func writeJSON(w http.ResponseWriter, status int, data any) {
+	body, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("JSON encoding failed: %v", err)
+		http.Error(
+			w,
+			"internal server error",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(status)
+
+	if _, err := w.Write(append(body, '\n')); err != nil {
+		log.Printf("write response failed: %v", err)
+	}
+}
+
+// GET /students/{id}
+func studentByIDHandler(repo *StudentRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		idText := r.PathValue("id")
+
+		studentID, err := strconv.Atoi(idText)
+		if err != nil || studentID <= 0 {
+			writeJSON(
+				w,
+				http.StatusBadRequest,
+				ErrorResponse{Error: "invalid student id"},
+			)
+			return
+		}
+
+		student, err := repo.GetByID(studentID)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			writeJSON(
+				w,
+				http.StatusNotFound,
+				ErrorResponse{Error: "student not found"},
+			)
+			return
+		}
+
+		if err != nil {
+			log.Printf("GetByID failed: %v", err)
+
+			writeJSON(
+				w,
+				http.StatusInternalServerError,
+				ErrorResponse{Error: "internal server error"},
+			)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, student)
+	}
+}
+
+// GET /students
+func studentsHandler(repo *StudentRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		students, err := repo.List()
+		if err != nil {
+			log.Printf("List failed: %v", err)
+
+			writeJSON(
+				w,
+				http.StatusInternalServerError,
+				ErrorResponse{Error: "internal server error"},
+			)
+			return
+		}
+
+		writeJSON(w, http.StatusOK, students)
+	}
+}
+
+// POST /students
+func createStudentHandler(repo *StudentRepository) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 1. 读取并解码请求JSON
+		var student Student
+
+		err := json.NewDecoder(r.Body).Decode(&student)
+		if err != nil {
+			writeJSON(
+				w,
+				http.StatusBadRequest,
+				ErrorResponse{Error: "invalid JSON body"},
+			)
+			return
+		}
+
+		// 2. 校验学生数据
+		if student.ID <= 0 ||
+			strings.TrimSpace(student.Name) == "" ||
+			student.Age <= 0 {
+			writeJSON(
+				w,
+				http.StatusBadRequest,
+				ErrorResponse{Error: "invalid student data"},
+			)
+			return
+		}
+
+		// 3. 调用Repository写入SQLite
+		err = repo.Create(student)
+		if err != nil {
+			// 判断是否属于SQLite的主键或唯一约束冲突
+			var sqliteErr sqlite3.Error
+
+			if errors.As(err, &sqliteErr) &&
+				(sqliteErr.ExtendedCode == sqlite3.ErrConstraintPrimaryKey ||
+					sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique) {
+				writeJSON(
+					w,
+					http.StatusConflict,
+					ErrorResponse{Error: "student id already exists"},
+				)
+				return
+			}
+
+			// 其他数据库错误
+			log.Printf("Create failed: %v", err)
+
+			writeJSON(
+				w,
+				http.StatusInternalServerError,
+				ErrorResponse{Error: "internal server error"},
+			)
+			return
+		}
+
+		// 4. 新增成功：设置资源地址
+		w.Header().Set(
+			"Location",
+			"/students/"+strconv.Itoa(student.ID),
+		)
+
+		// 5. 返回201及新建学生
+		writeJSON(w, http.StatusCreated, student)
+	}
+}
+
+func main() {
+	// 复用之前的文件型SQLite数据库
+	dbPath := filepath.Join(
+		"..",
+		"day38-sql-persistence",
+		"students.db",
+	)
+
+	// 防止意外创建新的空数据库
+	if _, err := os.Stat(dbPath); err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+
+	// 复用现有Repository
+	repo := NewStudentRepository(db)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc(
+		"GET /students",
+		studentsHandler(repo),
+	)
+
+	mux.HandleFunc(
+		"GET /students/{id}",
+		studentByIDHandler(repo),
+	)
+
+	mux.HandleFunc(
+		"POST /students",
+		createStudentHandler(repo),
+	)
+
+	log.Println("Server listening on http://127.0.0.1:8081")
+
+	if err := http.ListenAndServe("127.0.0.1:8081", mux); err != nil {
+		log.Fatal(err)
+	}
+}
+
+```
+
+这份程序沿用了之前的练习写法。当前只进行一次 `Decode()`，对于额外 JSON 字段、多段 JSON 内容和请求体大小还没有实施严格控制；这些属于后续 HTTP API 健壮性改进内容，暂时不影响今天理解 POST 与数据库插入的主线。
+
+# 六、运行和测试
+
+## 1. 终端 A：启动服务器
+
+由于 Day43 Stage 1 的预览服务也使用 `8081`，先在原来的服务器终端按 `Ctrl+C` 停止旧服务。
+
+然后执行：
+
+```
+cd D:\Campus_Recruit_2027\09_StudyWorkspace\go-learning\day43-go-post-students
+
+go run .
+```
+
+预期：
+
+```
+Server listening on http://127.0.0.1:8081
+```
+
+## 2. 终端 B：发送创建学生请求
+
+打开新的 PowerShell 终端。
+
+先定义请求体：
+
+```
+$body = '{"id":1005,"name":"Eva","age":22}'
+```
+
+发送 POST：
+
+```
+$response = Invoke-WebRequest `
+    -Uri "http://127.0.0.1:8081/students" `
+    -Method POST `
+    -ContentType "application/json" `
+    -Body $body
+```
+
+检查：
+
+```
+$response.StatusCode
+$response.Content
+$response.Headers["Location"]
+```
+
+预期：
+
+```
+201
+
+{"id":1005,"name":"Eva","age":22}
+
+/students/1005
+```
+
+注意：如果你之前已经将 ID 1005 写入过持久化数据库，第一次请求也可能返回 409。出现这种情况时，可以使用其他未被占用的测试 ID。
+
+## 3. 验证是否真的插入 SQLite
+
+执行：
+
+```
+curl.exe -i http://127.0.0.1:8081/students/1005
+```
+
+预期：
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+```
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+然后查询全部学生：
+
+```
+curl.exe -i http://127.0.0.1:8081/students
+```
+
+应该能够在 JSON 数组中找到新插入的 Eva。
+
+这两步可以证明：POST 不只是把 JSON 返回给客户端，而是真的调用了 Repository，把数据保存到了 SQLite。
+
+## 4. 测试重复主键：409 Conflict
+
+使用刚才相同的 `$body` 再次发送 POST。
+
+Windows PowerShell 5.1 中，`Invoke-WebRequest` 遇到 409 通常会抛出异常，所以我们使用：
+
+```
+try {
+    Invoke-WebRequest `
+        -Uri "http://127.0.0.1:8081/students" `
+        -Method POST `
+        -ContentType "application/json" `
+        -Body $body
+}
+catch {
+    [int]$_.Exception.Response.StatusCode
+}
+```
+
+预期：
+
+```
+409
+```
+
+响应体应为：
+
+```
+{"error":"student id already exists"}
+```
+
+## 5. 测试参数非法：400 Bad Request
+
+再准备一个不满足业务条件的请求：
+
+```
+$badBody = '{"id":-1,"name":"","age":0}'
+```
+
+执行：
+
+```
+try {
+    Invoke-WebRequest `
+        -Uri "http://127.0.0.1:8081/students" `
+        -Method POST `
+        -ContentType "application/json" `
+        -Body $badBody
+}
+catch {
+    [int]$_.Exception.Response.StatusCode
+}
+```
+
+预期：
+
+```
+400
+```
+
+错误响应：
+
+```
+{"error":"invalid student data"}
+```
+
+# 七、Go Day43 Stage 2 检查
+
+今天最后只需要三道题，并验证实际运行结果。
+
+## 检查 4：POST 与 Repository
+
+对于：
+
+```
+err := repo.Create(student)
+```
+
+回答：
+
+1. 为什么必须先解码并校验 JSON，再调用 `Create()`？
+2. 为什么 `Create()` 方法内部不应该直接返回 HTTP 状态码？
+3. 成功创建学生后，为什么使用 `201 Created`，而不是始终返回 `200 OK`？
+检查4：
+1. 为什么必须先解码并校验 JSON，再调用 `Create()`？因为客户端发来的请求数据不一定正确，需要先确保请求正确且数据满足业务逻辑再进行下游操作。
+2. 为什么 `Create()` 方法内部不应该直接返回 HTTP 状态码？因为其属于数据库层，只专注于数据库相关操作以及返回结果，handler层负责根据数据库层返回的结果对应返回 HTTP 状态码，各司其职
+3. 成功创建学生后，为什么使用 `201 Created`，而不是始终返回 `200 OK`？201 Created代表请求操作成功，更能凸显请求结果的正确性，而不是颗粒度较粗的200 OK
+## 检查 5：重复主键与 409
+
+假设客户端连续两次发送：
+
+```
+{"id":1005,"name":"Eva","age":22}
+```
+
+请回答：
+
+1. 第一次插入成功后，第二次为什么可能失败？
+2. 为什么这种情况更适合返回 `409 Conflict`，而不是统一返回 `500 Internal Server Error`？
+3. `errors.As(err, &sqliteErr)` 在这里起什么作用？
+检查5：
+1. 第一次插入成功后，第二次为什么可能失败？因为id是primary key主键，具有唯一性约束，所以第一次插入成功后，第二次插入会触发唯一性约束检验，导致重复主键无法插入
+2. 为什么这种情况更适合返回 `409 Conflict`，而不是统一返回 `500 Internal Server Error`？同上题的第三问相似，更能凸显错误的具体原因，而不是颗粒度较粗的大类错误状态码
+3. `errors.As(err, &sqliteErr)` 在这里起什么作用？判断错误是否是唯一性约束校验错误，用于handler层将具体错误映射成对应的状态码。
+## 检查 6：HTTP 请求的完整数据流
+
+请按顺序解释下面三个操作分别发生在哪一层、解决什么问题：
+
+```
+json.NewDecoder(r.Body).Decode(&student)
+```
+
+```
+repo.Create(student)
+```
+
+```
+writeJSON(w, http.StatusCreated, student)
+```
+检查6：
+json.NewDecoder(r.Body).Decode(&student) 发生在handler层，解决将客户端发来的JSON格式请求体数据转换成Go Struct变量值
+repo.Create(student) 调用发生在handler层，但具体数据库操作发生在Repository层，执行对应的SQL语句将传入的具体学生记录添加到数据库中，将数据持久化
+writeJSON(w, http.StatusCreated, student)发生在handler层，正确新增学生记录后，handler负责将请求结果写入响应中，返回给客户端。
+最后告诉我实际运行是否完成以下测试：
+
+| 测试             | 预期                |
+| -------------- | ----------------- |
+| 第一次 POST 新学生   | `201 Created`     |
+| GET 新学生        | `200 OK`          |
+| 第二次 POST 相同 ID | `409 Conflict`    |
+| POST 非法学生数据    | `400 Bad Request` |
+
+完成后我会按照五部分格式逐题批改，正式结束 2026 年 10 月 17 日 Day43，然后整理当天完整学习笔记、10 月进度、下一日计划与 Git 提交步骤。
+
+今天的核心目标，就是把你已经掌握的 JSON 解码、HTTP Handler、Repository、SQLite 真正组合起来，形成第一个可实际写入数据库的 HTTP API。
