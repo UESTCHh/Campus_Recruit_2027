@@ -231,3 +231,62 @@ func TestCreateStudentConflict(t *testing.T) {
 		t.Fatalf("original record unexpectedly modified: saved=%+v, err=%v", saved, err)
 	}
 }
+
+func TestDay46InvalidStudentID(t *testing.T) {
+	repo := newIsolatedStudentRepo(t)
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /students/{id}",
+		studentByIDHandler(repo))
+	// 1. 自己创建 GET /students/abc 请求
+	req := httptest.NewRequest(
+		http.MethodGet,
+		"/students/abc",
+		nil,
+	)
+	// 2. 自己创建 ResponseRecorder
+	recorder := httptest.NewRecorder()
+	// 3. 调用 mux.ServeHTTP()
+	mux.ServeHTTP(recorder, req)
+	// 4. 获取响应并检查状态码是否为 400
+	result := recorder.Result().StatusCode
+	if result != 400 {
+		t.Fatalf("required status code 400, but got %v", result)
+	}
+}
+
+//标准写法
+// func TestDay46InvalidStudentID(t *testing.T) {
+//     repo := newIsolatedStudentRepo(t)
+
+//     mux := http.NewServeMux()
+//     mux.HandleFunc(
+//         "GET /students/{id}",
+//         studentByIDHandler(repo),
+//     )
+
+//     // 构造非法 ID 请求
+//     req := httptest.NewRequest(
+//         http.MethodGet,
+//         "/students/abc",
+//         nil,
+//     )
+
+//     recorder := httptest.NewRecorder()
+
+//     // 执行路由和 Handler
+//     mux.ServeHTTP(recorder, req)
+
+//     // 获取 HTTP 响应
+//     resp := recorder.Result()
+//     defer resp.Body.Close()
+
+//     // 验证 400
+//     if resp.StatusCode != http.StatusBadRequest {
+//         t.Fatalf(
+//             "expected status 400, got %d",
+//             resp.StatusCode,
+//         )
+//     }
+// }
