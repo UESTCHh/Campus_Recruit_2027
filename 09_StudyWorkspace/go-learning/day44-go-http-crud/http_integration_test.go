@@ -282,11 +282,57 @@ func TestDay46InvalidStudentID(t *testing.T) {
 //     resp := recorder.Result()
 //     defer resp.Body.Close()
 
-//     // 验证 400
-//     if resp.StatusCode != http.StatusBadRequest {
-//         t.Fatalf(
-//             "expected status 400, got %d",
-//             resp.StatusCode,
-//         )
-//     }
-// }
+//	    // 验证 400
+//	    if resp.StatusCode != http.StatusBadRequest {
+//	        t.Fatalf(
+//	            "expected status 400, got %d",
+//	            resp.StatusCode,
+//	        )
+//	    }
+//	}
+func TestDay47GetStudentWithSQLite(t *testing.T) {
+	// TODO 1：创建独立测试数据库 Repository
+	repo := newIsolatedStudentRepo(t)
+	// TODO 2：使用 Repository 向数据库插入学生
+	// ID=1001, Name="Alice", Age=20
+	// repo.Create(Student{ID: 1001, Name: "Alice", Age: 20})
+	err := repo.Create(Student{
+		ID:   1001,
+		Name: "Alice",
+		Age:  20,
+	})
+	if err != nil {
+		t.Fatalf("create student failed: %v", err)
+	}
+	// TODO 3：创建 ServeMux，注册 GET /students/{id}
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /students/{id}", studentByIDHandler(repo))
+	// TODO 4：构造 GET /students/1001 请求
+	req := httptest.NewRequest(http.MethodGet, "/students/1001", nil)
+	// TODO 5：创建 Recorder 并执行 ServeHTTP
+	recorder := httptest.NewRecorder()
+	mux.ServeHTTP(recorder, req)
+	// TODO 6：检查 HTTP 状态码为 200
+	result := recorder.Result()
+	if result.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 but got %d", result.StatusCode)
+	}
+	// TODO 7：解析响应 JSON，检查学生字段
+	// want := Student{ID: 1001, Name: "Alice", Age: 20}
+	// got := Student{}
+	// if json.NewDecoder(result.Body).Decode(&got); got != want {
+	// 	t.Fatalf("expected 1001 Alice 20 but got %v", got)
+	// }
+	var got Student
+
+	err = json.NewDecoder(result.Body).Decode(&got)
+	if err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+
+	want := Student{ID: 1001, Name: "Alice", Age: 20}
+
+	if got != want {
+		t.Fatalf("expected %+v, got %+v", want, got)
+	}
+}
