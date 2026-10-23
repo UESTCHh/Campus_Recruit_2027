@@ -306,7 +306,7 @@ func TestDay47GetStudentWithSQLite(t *testing.T) {
 	}
 	// TODO 3：创建 ServeMux，注册 GET /students/{id}
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /students/{id}", studentByIDHandler(repo))
+	registerStudentRoutes(mux, repo)
 	// TODO 4：构造 GET /students/1001 请求
 	req := httptest.NewRequest(http.MethodGet, "/students/1001", nil)
 	// TODO 5：创建 Recorder 并执行 ServeHTTP

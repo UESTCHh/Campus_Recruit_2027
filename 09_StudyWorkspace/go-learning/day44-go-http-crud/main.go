@@ -295,34 +295,14 @@ func deleteStudentHandler(repo *StudentRepository) http.HandlerFunc {
 	}
 }
 
-func main() {
-	// 复用之前的文件型SQLite数据库
-	dbPath := filepath.Join(
-		"..",
-		"day38-sql-persistence",
-		"students.db",
-	)
-
-	// 防止意外创建新的空数据库
-	if _, err := os.Stat(dbPath); err != nil {
-		log.Fatal(err)
-	}
-
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		log.Fatal(err)
-	}
-
-	// 复用现有Repository
-	repo := NewStudentRepository(db)
-
-	mux := http.NewServeMux()
-
+// 路由注册函数
+func registerStudentRoutes(
+	mux *http.ServeMux,
+	repo *StudentRepository,
+) {
+	// TODO：
+	// 将 main() 中原来的五条 mux.HandleFunc()
+	// 原样移动到这里
 	mux.HandleFunc(
 		"GET /students",
 		studentsHandler(repo),
@@ -347,6 +327,50 @@ func main() {
 		"DELETE /students/{id}",
 		deleteStudentHandler(repo),
 	)
+}
+
+func main() {
+	// // 复用之前的文件型SQLite数据库
+	// dbPath := filepath.Join(
+	// 	"..",
+	// 	"day38-sql-persistence",
+	// 	"students.db",
+	// )
+
+	// 1. 尝试从环境变量 STUDENT_DB_PATH 读取数据库路径
+	dbPath := os.Getenv("STUDENT_DB_PATH")
+	// 2. 如果没有配置，则使用原来的默认数据库路径
+	if dbPath == "" {
+		dbPath = filepath.Join(
+			"..",
+			"day38-sql-persistence",
+			"students.db",
+		)
+	}
+	// 3. 保留 os.Stat() 文件存在性检查
+	// 防止意外创建新的空数据库
+	// 因为 SQLite 在指定文件不存在时可能创建新的空数据库
+	// 而我们当前不希望因为数据库路径写错，就意外创建一个没有 students 表的文件。
+	if _, err := os.Stat(dbPath); err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
+
+	// 复用现有Repository
+	repo := NewStudentRepository(db)
+
+	mux := http.NewServeMux()
+
+	registerStudentRoutes(mux, repo)
 
 	log.Println("Server listening on http://127.0.0.1:8081")
 
