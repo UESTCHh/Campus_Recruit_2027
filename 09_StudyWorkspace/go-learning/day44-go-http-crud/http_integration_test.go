@@ -12,14 +12,15 @@ import (
 )
 
 // newTestMux 使用现有的业务 Handler；没有重新实现 CRUD。
-// 当前测试路由与 main.go 保持一致；未来可抽取生产与测试共用的 newRouter(repo)。
+// newTestMux 使用生产环境的路由注册函数创建测试路由。
 func newTestMux(repo *StudentRepository) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /students", studentsHandler(repo))
-	mux.HandleFunc("GET /students/{id}", studentByIDHandler(repo))
-	mux.HandleFunc("POST /students", createStudentHandler(repo))
-	mux.HandleFunc("PUT /students/{id}", updateStudentHandler(repo))
-	mux.HandleFunc("DELETE /students/{id}", deleteStudentHandler(repo))
+	// mux.HandleFunc("GET /students", studentsHandler(repo))
+	// mux.HandleFunc("GET /students/{id}", studentByIDHandler(repo))
+	// mux.HandleFunc("POST /students", createStudentHandler(repo))
+	// mux.HandleFunc("PUT /students/{id}", updateStudentHandler(repo))
+	// mux.HandleFunc("DELETE /students/{id}", deleteStudentHandler(repo))
+	registerStudentRoutes(mux, repo)
 	return mux
 }
 
