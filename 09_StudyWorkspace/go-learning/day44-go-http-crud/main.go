@@ -365,6 +365,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// 数据库连接正常后，确保 students 表存在
+	if err := initStudentTable(db); err != nil {
+		log.Fatalf("initialize students table failed: %v", err)
+	}
+
 	// 复用现有Repository
 	repo := NewStudentRepository(db)
 
