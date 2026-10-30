@@ -236,10 +236,14 @@ func TestCreateStudentConflict(t *testing.T) {
 func TestDay46InvalidStudentID(t *testing.T) {
 	repo := newIsolatedStudentRepo(t)
 
-	mux := http.NewServeMux()
+	// mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /students/{id}",
-		studentByIDHandler(repo))
+	// mux.HandleFunc("GET /students/{id}",
+	// 	studentByIDHandler(repo))
+
+	//使用路由注册函数代替手动注册
+	mux := newTestMux(repo)
+
 	// 1. 自己创建 GET /students/abc 请求
 	req := httptest.NewRequest(
 		http.MethodGet,
