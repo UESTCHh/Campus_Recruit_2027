@@ -1,6 +1,9 @@
 package main
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+)
 
 type Student struct {
 	ID   int    `json:"id"`
@@ -30,7 +33,7 @@ func (r *StudentRepository) GetByID(id int) (Student, error) {
 	)
 
 	if err != nil {
-		return Student{}, err
+		return Student{}, fmt.Errorf("GetByID failed, studentID=%d: %w", id, err)
 	}
 	return student, nil
 }
